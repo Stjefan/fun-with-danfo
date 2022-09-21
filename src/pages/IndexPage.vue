@@ -1,7 +1,11 @@
 <template>
   <q-page>
-    {{ selectedDatetime }}
+    <p>{{ selectedDatetimeFloor }}</p>
+    <p>{{ selectedDatetime }}</p>
+
     <q-input type="datetime-local" v-model="selectedDatetime" step="1" />
+    <q-btn label="+15min" @click="addMinutes(15)" />
+    <q-btn label="-15min" @click="addMinutes(-15)" />
     <q-btn label="read" @click="readData" />
     <q-btn label="aussortierung" @click="readAussortierugen" />
     <q-btn label="another" @click="anotherPlot" />
@@ -16,7 +20,7 @@ import Plotly from "plotly.js-dist-min";
 
 import { DateTime } from "luxon";
 
-import { ref } from "vue";
+import { ref, computed } from "vue";
 const { InfluxDB } = require("@influxdata/influxdb-client");
 
 // You can generate an API token from the "API Tokens Tab" in the UI
@@ -44,6 +48,14 @@ export default defineComponent({
     let myDF;
     let myDateTimeStartString = "2022-09-20T02:00:00Z";
     let myDateTimeStopString = "2022-09-20T02:30:00Z";
+
+    let selectedDatetimeFloor = computed(() => {
+      let dt = DateTime.fromFormat(selectedDatetime.value, myFormat);
+
+      return dt
+        .plus({ minutes: -dt.minute % 15, seconds: -dt.second })
+        .toFormat(myFormat);
+    });
     readCSV(
       "https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv"
     )
@@ -94,7 +106,10 @@ export default defineComponent({
     async function readAussortierugen() {
       const queryApi = client.getQueryApi(org);
 
-      let myStartTime = DateTime.fromFormat(selectedDatetime.value, myFormat);
+      let myStartTime = DateTime.fromFormat(
+        selectedDatetimeFloor.value,
+        myFormat
+      );
 
       let myStartTimeString = myStartTime.toFormat(myFormatWithZ);
 
@@ -130,21 +145,23 @@ export default defineComponent({
             mode: "lines+markers",
             marker: {
               color: "blue",
-              size: 1,
+              size: 2,
             },
+            name: "Aussortiert",
             line: {
               color: "blue",
-              width: 1,
+              width: 2,
             },
           };
 
           var trace2 = {
             x: merge_df.index,
             y: merge_df["_value"].values,
+            name: "LAFeq",
             mode: "lines",
             line: {
               color: "red",
-              width: 1,
+              width: 2,
             },
           };
           /*
@@ -172,7 +189,7 @@ export default defineComponent({
           ];
 
           var layout = {
-            title: "Line and Scatter Styling",
+            title: "Messwerte",
           };
 
           Plotly.newPlot("plot_div", data, layout);
@@ -197,11 +214,22 @@ export default defineComponent({
       }
     }
 
+    function addMinutes(noMinutes) {
+      let myStartTime = DateTime.fromFormat(selectedDatetime.value, myFormat);
+
+      selectedDatetime.value = myStartTime
+        .plus({ minutes: noMinutes })
+        .toFormat(myFormat);
+    }
+
     async function readData() {
       const queryApi = client.getQueryApi(org);
 
       const project_name = "mannheim";
-      let myStartTime = DateTime.fromFormat(selectedDatetime.value, myFormat);
+      let myStartTime = DateTime.fromFormat(
+        selectedDatetimeFloor.value,
+        myFormat
+      );
 
       let myStartTimeString = myStartTime.toFormat(myFormatWithZ);
 
@@ -313,6 +341,8 @@ export default defineComponent({
       readAussortierugen,
       anotherPlot,
       selectedDatetime,
+      selectedDatetimeFloor,
+      addMinutes,
     };
   },
 });
