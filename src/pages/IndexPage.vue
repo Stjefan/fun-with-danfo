@@ -1,15 +1,29 @@
 <template>
   <q-page>
-    <p>{{ selectedDatetimeFloor }}</p>
-    <p>{{ selectedDatetime }}</p>
+    <div class="row q-pa-md q-gutter-md">
+      <q-btn label="-12h" @click="addMinutes(-12 * 60)" />
+      <q-btn label="-1h" @click="addMinutes(-60)" />
+      <q-btn label="-15min" @click="addMinutes(-15)" />
+      <q-input type="datetime-local" v-model="selectedDatetime" step="1" />
+      <q-btn label="+15min" @click="addMinutes(15)" />
+      <q-btn label="+1h" @click="addMinutes(60)" />
+      <q-btn label="+12h" @click="addMinutes(12 * 60)" />
+    </div>
+    <div class="row">
+      <q-select v-model="selectedMesspunkt" />
+    </div>
+    <div class="row">
+      <q-btn label="read" @click="readData" />
+      <q-btn label="aussortierung" @click="readAussortierugen" />
+      <q-btn label="another" @click="anotherPlot" />
+      <q-btn label="Terz" @click="readTerz" />
+    </div>
 
-    <q-input type="datetime-local" v-model="selectedDatetime" step="1" />
-    <q-btn label="+15min" @click="addMinutes(15)" />
-    <q-btn label="-15min" @click="addMinutes(-15)" />
-    <q-btn label="read" @click="readData" />
-    <q-btn label="aussortierung" @click="readAussortierugen" />
-    <q-btn label="another" @click="anotherPlot" />
-    <div id="plot_div"></div>
+    <div class="row">
+      <div id="plot_div" class="col-6"></div>
+      <div id="plot_terz_div" class="col-6"></div>
+    </div>
+    <div class="row"></div>
   </q-page>
 </template>
 
@@ -20,7 +34,8 @@ import Plotly from "plotly.js-dist-min";
 
 import { DateTime } from "luxon";
 
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
+import _ from "lodash";
 const { InfluxDB } = require("@influxdata/influxdb-client");
 
 // You can generate an API token from the "API Tokens Tab" in the UI
@@ -39,8 +54,14 @@ const client = new InfluxDB({
 export default defineComponent({
   name: "IndexPage",
   setup() {
+    const queryApi = client.getQueryApi(org);
+    const project_name = "mannheim";
+
     const myFormat = "yyyy-MM-dd'T'HH:mm:ss";
     const myFormatWithZ = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+
+    const selectedMesspunkt = ref("Mannheim MP 2");
+
     let selectedDatetime = ref(
       DateTime.now().plus({ minutes: -30 }).toFormat("yyyy-MM-dd'T'HH:mm:ss")
       //2023-10-21T17:26:15
@@ -139,7 +160,7 @@ export default defineComponent({
         if (true) {
           const x = erkennungen.index;
           const y = erkennungen.values;
-          var trace1 = {
+          let trace1 = {
             x: x,
             y: y,
             mode: "lines+markers",
@@ -154,7 +175,7 @@ export default defineComponent({
             },
           };
 
-          var trace2 = {
+          let trace2 = {
             x: merge_df.index,
             y: merge_df["_value"].values,
             name: "LAFeq",
@@ -188,8 +209,8 @@ export default defineComponent({
             // trace3
           ];
 
-          var layout = {
-            title: "Messwerte",
+          let layout = {
+            title: "LAFeq-Pegel-Zeitverlauf",
           };
 
           Plotly.newPlot("plot_div", data, layout);
@@ -222,10 +243,139 @@ export default defineComponent({
         .toFormat(myFormat);
     }
 
-    async function readData() {
-      const queryApi = client.getQueryApi(org);
+    watch(selectedDatetime, (newVal) => {
+      console.log(newVal);
+      readData();
 
-      const project_name = "mannheim";
+      readTerz();
+    });
+
+    async function readTerz() {
+      let myStartTime = DateTime.fromFormat(
+        selectedDatetimeFloor.value,
+        myFormat
+      );
+
+      let myStartTimeString = myStartTime.toFormat(myFormatWithZ);
+
+      let myEndTimeString = myStartTime
+        .plus({ minutes: 15 })
+        .toFormat(myFormatWithZ);
+
+      const frequencies = [
+        "hz20",
+        "hz25",
+        "hz31_5",
+        "hz40",
+        "hz50",
+        "hz63",
+        "hz80",
+        "hz100",
+        "hz125",
+        "hz160",
+        "hz200",
+        "hz250",
+        "hz315",
+        "hz400",
+        "hz500",
+        "hz630",
+        "hz800",
+        "hz1000",
+        "hz1250",
+        "hz1600",
+        "hz2000",
+        "hz2500",
+        "hz3150",
+        "hz4000",
+        "hz5000",
+        "hz6300",
+        "hz8000",
+        "hz10000",
+        "hz12500",
+        "hz16000",
+        "hz20000",
+      ];
+
+      const query = `from(bucket: "dauerauswertung_immendingen") |> range(start: ${myStartTimeString}, stop: ${myEndTimeString}) |> filter(fn: (r) => r["_measurement"] == "messwerte_${project_name}_terz" and r["messpunkt"] == "Mannheim MP 2")`;
+      try {
+        console.log(query);
+        const data = await queryApi.collectRows(query);
+
+        let grouped = _.groupBy(data, "_time");
+        let target = {};
+        for (let g in grouped) {
+          target[g] = [];
+          for (let f of frequencies) {
+            let pegel = grouped[g].find((i) => i._field == f);
+            if (pegel != null) {
+              target[g].push(pegel["_value"]);
+            } else {
+              throw new Error(`${f} is missing`);
+            }
+          }
+        }
+
+        console.log(target);
+
+        const x = frequencies;
+        const myTimePoint = DateTime.fromFormat(
+          selectedDatetime.value,
+          myFormat
+        );
+
+        const y = target[myTimePoint.toFormat(myFormatWithZ)];
+        let trace1 = {
+          x: x,
+          y: y,
+          // mode: "lines+markers",
+          type: "bar",
+        };
+
+        let terzData = [
+          trace1,
+          //trace2, trace3
+        ];
+
+        let layout = {
+          title: `Terz-Spektrum: ${myTimePoint.toFormat(myFormatWithZ)}`,
+        };
+
+        Plotly.newPlot("plot_terz_div", terzData, layout);
+
+        if (false) {
+          const df = new DataFrame(data);
+
+          console.log(df);
+
+          let new_df = df.setIndex({ column: "table" });
+          console.log(new_df);
+
+          let layout = {
+            title: "A financial charts",
+            xaxis: {
+              title: "Date",
+            },
+            yaxis: {
+              title: "Count",
+            },
+          };
+
+          let config = {
+            columns: ["_value"],
+          };
+
+          new_df.plot("plot_div").line({ config, layout });
+
+          console.log("\nCollect ROWS SUCCESS");
+          myDF = new_df;
+        }
+      } catch (e) {
+        console.error(e);
+        console.log("\nCollect ROWS ERROR");
+      }
+    }
+
+    async function readData() {
       let myStartTime = DateTime.fromFormat(
         selectedDatetimeFloor.value,
         myFormat
@@ -271,7 +421,9 @@ export default defineComponent({
         new_df.plot("plot_div").line({ config, layout });
 
         console.log("\nCollect ROWS SUCCESS");
+
         myDF = new_df;
+        readAussortierugen();
       } catch (e) {
         console.error(e);
         console.log("\nCollect ROWS ERROR");
@@ -282,7 +434,7 @@ export default defineComponent({
       if (myDF != null) {
         const x = myDF.index;
         const y = myDF["_value"].values;
-        var trace1 = {
+        let trace1 = {
           x: x,
           y: y,
           // mode: "lines+markers",
@@ -324,12 +476,12 @@ export default defineComponent({
 
       */
 
-        var data = [
+        let data = [
           trace1,
           //trace2, trace3
         ];
 
-        var layout = {
+        let layout = {
           title: "Line and Scatter Styling",
         };
 
@@ -337,12 +489,14 @@ export default defineComponent({
       }
     }
     return {
+      readTerz,
       readData,
       readAussortierugen,
       anotherPlot,
       selectedDatetime,
       selectedDatetimeFloor,
       addMinutes,
+      selectedMesspunkt,
     };
   },
 });
