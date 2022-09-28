@@ -1,6 +1,6 @@
 <template>
-  <q-page>
-    <div class="row q-pa-md q-gutter-md">
+  <q-page class="q-pa-md q-gutter-md">
+    <div class="row q-gutter-sm">
       <q-btn label="-12h" @click="addMinutes(-12 * 60)" />
       <q-btn label="-1h" @click="addMinutes(-60)" />
       <q-btn label="-15min" @click="addMinutes(-15)" />
@@ -13,10 +13,7 @@
       <q-select v-model="selectedMesspunkt" />
     </div>
     <div class="row">
-      <q-btn label="read" @click="readData" />
-      <q-btn label="aussortierung" @click="readAussortierugen" />
-      <q-btn label="another" @click="anotherPlot" />
-      <q-btn label="Terz" @click="readTerz" />
+      <q-btn label="Aktualisieren" @click="readData" />
     </div>
 
     <div class="row">
@@ -36,25 +33,11 @@ import { DateTime } from "luxon";
 
 import { ref, computed, watch } from "vue";
 import _ from "lodash";
-const { InfluxDB } = require("@influxdata/influxdb-client");
-
-// You can generate an API token from the "API Tokens Tab" in the UI
-const token =
-  "6DeLFWxoSLGGZg5Yv2rpqUlaKJqaTio565N5EyS5AOrW-2KZ3u95AeeoVqorntQPgpiOgdVE7TqjQRn8qF0v9Q==";
-const kuf_srv_token =
-  "0ql08EobRW6A23j97jAkLyqNKIfQIKJS9_Wrw4mWIqBu795dl4cSfaykizl261h-QwY9BPDMUXbDCuFzlPQsfg==";
-const org = "kufi";
-const bucket = "dauerauswertung_immendingen";
-
-const client = new InfluxDB({
-  url: "http://localhost:8086",
-  token: kuf_srv_token,
-});
+import { queryApi } from "./db.js";
 
 export default defineComponent({
   name: "IndexPage",
   setup() {
-    const queryApi = client.getQueryApi(org);
     const project_name = "mannheim";
 
     const myFormat = "yyyy-MM-dd'T'HH:mm:ss";
@@ -125,8 +108,6 @@ export default defineComponent({
     }
 
     async function readAussortierugen() {
-      const queryApi = client.getQueryApi(org);
-
       let myStartTime = DateTime.fromFormat(
         selectedDatetimeFloor.value,
         myFormat

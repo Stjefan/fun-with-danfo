@@ -1,10 +1,12 @@
 <template>
   <q-page padding>
-    <div class="row">{{ selectedDate }} {{ selectedDatetime }}</div>
-    <div class="row">{{ selectedDatetime }}</div>
     <input type="date" v-model="selectedDate" />
+    <div class="row">
+      <q-input type="number" v-model="maxYAxis" label="Max. Y-Achse" />
+      <q-input type="number" v-model="intervalYAxis" label="Interval Y-Achse" />
+    </div>
+    <q-btn label="Aktualisieren" @click="plotLr" />
     <div id="plot_lr"></div>
-    <q-btn label="IO" @click="plotLr" />
   </q-page>
 </template>
 
@@ -47,6 +49,7 @@ export default {
         },
         yaxis: {
           title: "db(A)",
+          range: [0, 60],
         },
       };
 
@@ -70,7 +73,7 @@ export default {
         let trace1 = {
           x: x,
           y: y,
-          name: `Trace ${cnt}`,
+          name: `${s}`,
           mode: "lines+markers",
           marker: {
             /*
@@ -89,7 +92,12 @@ export default {
     }
     //2023-10-21T17:26:15
     //.toFormat("yyyy-MM-dd'T'HH:mm:ss")
+
+    const maxYAxis = ref(50);
+    const intervalYAxis = ref(50);
     return {
+      maxYAxis,
+      intervalYAxis,
       selectedDate,
       selectedDatetime,
       readIO,

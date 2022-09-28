@@ -9,7 +9,7 @@ const bucket = "dauerauswertung_immendingen";
 
 const client = new InfluxDB({
   url: "http://localhost:8086",
-  token: kuf_srv_token,
+  token: token,
 });
 const queryApi = client.getQueryApi(org);
 
@@ -19,6 +19,11 @@ import _ from "lodash";
 
 const myFormat = "yyyy-MM-dd'T'HH:mm:ss";
 const myFormatWithZ = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+
+function transform2CorrectDataFormat(arg) {
+  console.log(arg);
+  return DateTime.fromFormat(arg, myFormatWithZ).toFormat(myFormat);
+}
 
 async function readIO(myStartTime) {
   console.log(myStartTime);
@@ -31,58 +36,104 @@ async function readIO(myStartTime) {
   const query = `from(bucket: "dauerauswertung_immendingen")
   |> range(start: ${myStartTimeString}, stop: ${myEndTime})
   |> filter(fn: (r) => (r["_measurement"] == "auswertung_${project_name}_lr") and (r["immissionsort"] == "${selected_io_id}"))`;
+  console.log("Query", query);
   try {
+    let series_dict = {};
     const data = await queryApi.collectRows(query);
 
     console.log(data);
+    if (data.length != 0) {
+      let df = new DataFrame(data);
 
-    let df = new DataFrame(data);
+      let df_modified = df["_time"].apply(transform2CorrectDataFormat, {
+        axis: 1,
+      });
+      console.log(df_modified);
 
-    let uniqueItems = [...new Set([3, 5, 2, 10, 5, 2, 3])];
-    console.log(uniqueItems);
+      df = df.addColumn("more_time", df_modified.values, df_modified.index);
 
-    let groups = df.groupby(["verursacher"]).colDict;
+      const dtS = new Dt(df["more_time"]);
 
-    let series_dict = {};
+      for (let h of [
+        [0, 1],
+        [1, 2],
+        [2, 3],
+        [3, 4],
+        [4, 5],
+        [5, 6],
+        [6, 22],
+        [22, 23],
+        [23, 24],
+      ]) {
+        let groups = df.groupby(["verursacher"]).colDict;
+        for (let g in groups) {
+          let tranformed_to_utc_start = h[0];
+          let tranformed_to_utc_end = h[1];
+          console.log(tranformed_to_utc_end, tranformed_to_utc_start);
+          let df_sorted = df.query(
+            dtS
+              .hours()
+              .lt(tranformed_to_utc_end)
+              .and(dtS.hours().ge(tranformed_to_utc_start))
+              .and(df["verursacher"].eq(g))
+          );
+          console.log(df_sorted);
 
-    for (let g in groups) {
-      console.log(g, df.query(df["_value"].gt(42)));
-      let s = df
-        .query(df["verursacher"].eq(g))
-        .loc({ columns: ["_time", "_value"] });
-
-      const dtS = new Dt(s["_time"]);
-      const hourFilter = dtS.hours().eq(2);
-      console.log(s);
-      /*
+          /*
       const anotherDf = new DataFrame(
         { filter: hourFilter.values },
         { index: series_dict[g].index }
       );
       */
-      let tmp = hourFilter.values;
+          // s.addColumn("hours", tmp, { inplace: true });
 
-      console.log(s.iloc({ rows: [0, 1, 2] }));
-      // s.addColumn("hours", tmp, { inplace: true });
+          let s_by_verursacher = df_sorted.setIndex({ column: "_time" });
 
-      let s_by_verursacher = s.setIndex({ column: "_time" });
+          series_dict[`${g}_${h[0]}`] = s_by_verursacher;
 
-      series_dict[g] = s_by_verursacher;
+          console.log(dtS);
+        }
 
-      console.log(dtS);
+        let moreData = {
+          _value: [h[0] != 6 ? 38 : 50, h[0] != 6 ? 38 : 50],
+          _time: [
+            myStartTime.plus({ hours: h[0] }).toFormat(myFormat),
+            myStartTime.plus({ hours: h[1] }).toFormat(myFormat),
+          ],
+        };
+
+        let gw_df = new DataFrame(moreData);
+        series_dict[`grenzwert_${h[0]}`] = gw_df.setIndex({ column: "_time" });
+
+        console.log(series_dict);
+      }
+
+      return series_dict;
+    } else {
+      for (let h of [
+        [0, 1],
+        [1, 2],
+        [2, 3],
+        [3, 4],
+        [4, 5],
+        [5, 6],
+        [6, 22],
+        [22, 23],
+        [23, 24],
+      ]) {
+        let moreData = {
+          _value: [h[0] != 6 ? 38 : 50, h[0] != 6 ? 38 : 50],
+          _time: [
+            myStartTime.plus({ hours: h[0] }).toFormat(myFormat),
+            myStartTime.plus({ hours: h[1] }).toFormat(myFormat),
+          ],
+        };
+
+        let gw_df = new DataFrame(moreData);
+        series_dict[`grenzwert_${h[0]}`] = gw_df.setIndex({ column: "_time" });
+      }
+      return series_dict;
     }
-
-    let moreData = {
-      _value: [50, 50],
-      _time: [myStartTimeString, myEndTime],
-    };
-
-    let gw_df = new DataFrame(moreData);
-    series_dict["grenzwert"] = gw_df.setIndex({ column: "_time" });
-
-    console.log(series_dict);
-
-    return series_dict;
 
     if (false) {
       let merge_df = merge({
@@ -154,4 +205,4 @@ async function readIO(myStartTime) {
     console.log(err);
   }
 }
-export { readIO };
+export { readIO, queryApi };
