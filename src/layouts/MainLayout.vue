@@ -13,13 +13,17 @@
 
         <q-toolbar-title> ViewMes</q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <div>v 2022-10a</div>
       </q-toolbar>
     </q-header>
 
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
       <q-list>
-        <q-item-label header> Essential Links </q-item-label>
+        <q-item-label header> Dashboards </q-item-label>
+        <q-btn flat label="Immissionsorte" :to="{ name: 'io' }" />
+        <q-btn flat label="Messpunkte" :to="{ name: 'mp' }" />
+        <q-btn flat label="Wetter" :to="{ name: 'mete' }" />
+        <q-btn flat label="Karte" :to="{ name: 'map' }" />
       </q-list>
     </q-drawer>
 

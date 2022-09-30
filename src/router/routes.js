@@ -3,8 +3,22 @@ const routes = [
     path: "/",
     component: () => import("layouts/MainLayout.vue"),
     children: [
-      { path: "", component: () => import("pages/IndexPage.vue") },
-      { path: "io", component: () => import("pages/ImmissionsortPage.vue") },
+      { path: "", component: () => import("pages/IndexPage.vue"), name: "mp" },
+      {
+        path: "io",
+        component: () => import("pages/ImmissionsortPage.vue"),
+        name: "io",
+      },
+      {
+        path: "mete",
+        component: () => import("pages/MetePage.vue"),
+        name: "mete",
+      },
+      {
+        path: "map",
+        component: () => import("pages/KartePage.vue"),
+        name: "map",
+      },
     ],
   },
 

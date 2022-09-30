@@ -9,7 +9,7 @@ const bucket = "dauerauswertung_immendingen";
 
 const client = new InfluxDB({
   url: "http://localhost:8086",
-  token: token,
+  token: kuf_srv_token,
 });
 const queryApi = client.getQueryApi(org);
 
@@ -19,20 +19,54 @@ import _ from "lodash";
 
 const myFormat = "yyyy-MM-dd'T'HH:mm:ss";
 const myFormatWithZ = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+const shortFormat = "yyyy-MM-dd";
 
 function transform2CorrectDataFormat(arg) {
   console.log(arg);
   return DateTime.fromFormat(arg, myFormatWithZ).toFormat(myFormat);
 }
 
-async function readIO(myStartTime) {
+async function readDashboardInformation() {
+  const myStartTime = DateTime.fromFormat("2022-09-30", shortFormat);
+  const id_immissionsort = 4;
+  const project_name = "mannheim";
+  let myStartTimeString = myStartTime.toFormat(myFormatWithZ);
+  let myEndTime = myStartTime.plus({ hours: 24 }).toFormat(myFormatWithZ);
+
+  const query = `from(bucket: "dauerauswertung_immendingen")
+  |> range(start: ${myStartTimeString}, stop: ${myEndTime})
+  |> filter(fn: (r) => r["_measurement"] == "auswertung_${project_name}_lr" and r["verursacher"] == "gesamt" and r["immissionsort"] == "${id_immissionsort}") |> aggregateWindow(every: 1h, fn: max, createEmpty: false)`;
+
+  const query_lauteste_stunde_tag = `from(bucket: "dauerauswertung_immendingen")
+  |> range(start: ${myStartTimeString}, stop: ${myEndTime})
+  |> filter(fn: (r) => r["_measurement"] == "auswertung_${project_name}_lauteste_stunde") |> aggregateWindow(every: 1h, fn: max, createEmpty: false)`;
+
+  const data = await queryApi.collectRows(query);
+
+  console.log(data);
+
+  let lr_df = new DataFrame(data);
+
+  console.log(lr_df);
+
+  const data2 = await queryApi.collectRows(query_lauteste_stunde_tag);
+
+  console.log(data2);
+
+  let lauteste_stunde_df = new DataFrame(data2);
+
+  console.log(lauteste_stunde_df);
+}
+
+async function readIO(myStartTime, io, project_name) {
   console.log(myStartTime);
   let myStartTimeString = myStartTime.toFormat(myFormatWithZ);
-  let selected_io_id = 4;
+
+  let selected_io_id = io.id;
 
   let myEndTime = myStartTime.plus({ hours: 24 }).toFormat(myFormatWithZ);
 
-  const project_name = "mannheim";
+  // const project_name = "mannheim";
   const query = `from(bucket: "dauerauswertung_immendingen")
   |> range(start: ${myStartTimeString}, stop: ${myEndTime})
   |> filter(fn: (r) => (r["_measurement"] == "auswertung_${project_name}_lr") and (r["immissionsort"] == "${selected_io_id}"))`;
@@ -42,6 +76,36 @@ async function readIO(myStartTime) {
     const data = await queryApi.collectRows(query);
 
     console.log(data);
+    for (let h of [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 6],
+      [6, 22],
+      [22, 23],
+      [23, 24],
+    ]) {
+      series_dict[`${h[0]}`] = {};
+      let moreData = {
+        _value: [
+          h[0] != 6 ? io.gw_nacht : io.gw_tag,
+          h[0] != 6 ? io.gw_nacht : io.gw_tag,
+        ],
+        _time: [
+          myStartTime.plus({ hours: h[0] }).toFormat(myFormat),
+          myStartTime.plus({ hours: h[1] }).toFormat(myFormat),
+        ],
+      };
+
+      let gw_df = new DataFrame(moreData);
+      console.log(series_dict);
+      series_dict[`${h[0]}`][`grenzwert`] = gw_df.setIndex({
+        column: "_time",
+      });
+    }
+
     if (data.length != 0) {
       let df = new DataFrame(data);
 
@@ -89,51 +153,15 @@ async function readIO(myStartTime) {
 
           let s_by_verursacher = df_sorted.setIndex({ column: "_time" });
 
-          series_dict[`${g}_${h[0]}`] = s_by_verursacher;
+          series_dict[`${h[0]}`][`${g}`] = s_by_verursacher;
 
           console.log(dtS);
         }
-
-        let moreData = {
-          _value: [h[0] != 6 ? 38 : 50, h[0] != 6 ? 38 : 50],
-          _time: [
-            myStartTime.plus({ hours: h[0] }).toFormat(myFormat),
-            myStartTime.plus({ hours: h[1] }).toFormat(myFormat),
-          ],
-        };
-
-        let gw_df = new DataFrame(moreData);
-        series_dict[`grenzwert_${h[0]}`] = gw_df.setIndex({ column: "_time" });
-
-        console.log(series_dict);
       }
-
-      return series_dict;
-    } else {
-      for (let h of [
-        [0, 1],
-        [1, 2],
-        [2, 3],
-        [3, 4],
-        [4, 5],
-        [5, 6],
-        [6, 22],
-        [22, 23],
-        [23, 24],
-      ]) {
-        let moreData = {
-          _value: [h[0] != 6 ? 38 : 50, h[0] != 6 ? 38 : 50],
-          _time: [
-            myStartTime.plus({ hours: h[0] }).toFormat(myFormat),
-            myStartTime.plus({ hours: h[1] }).toFormat(myFormat),
-          ],
-        };
-
-        let gw_df = new DataFrame(moreData);
-        series_dict[`grenzwert_${h[0]}`] = gw_df.setIndex({ column: "_time" });
-      }
-      return series_dict;
+      console.log(series_dict);
     }
+
+    return series_dict;
 
     if (false) {
       let merge_df = merge({
@@ -205,4 +233,14 @@ async function readIO(myStartTime) {
     console.log(err);
   }
 }
-export { readIO, queryApi };
+
+var plotly_config = { responsive: true, locale: "de" };
+export {
+  readIO,
+  queryApi,
+  myFormat,
+  myFormatWithZ,
+  shortFormat,
+  plotly_config,
+  readDashboardInformation,
+};

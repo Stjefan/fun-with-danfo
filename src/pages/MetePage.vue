@@ -1,13 +1,12 @@
 <template>
-  <q-page padding>
+  <q-page padding class="q-gutter-md">
     <!-- content -->
-    <div class="row">
-      <q-input
-        type="date"
-        :model-value="currentDate"
-        @update:model-value="foo"
-      />
+    <div class="row q-gutter-sm">
+      <q-btn label="-24h" @click="addMinutes(-24 * 60)" />
+      <q-input type="date" v-model="selectedDate" />
+      <q-btn label="+24h" @click="addMinutes(24 * 60)" />
     </div>
+    <q-btn label="Aktualisieren" @click="plotMete" />
     <div id="mete-charts" style="height: 75vh" />
   </q-page>
 </template>
@@ -20,39 +19,58 @@ function updatePlotlyLayout(target, args) {
 
 import { onMounted, ref, watch, computed } from "vue";
 
-import Plotly from "plotly.js";
+import Plotly from "plotly.js-dist-min";
 import { useQuasar } from "quasar";
 
+import { DateTime } from "luxon";
+
 import _ from "lodash";
+
+import { queryApi, myFormat, myFormatWithZ, shortFormat } from "./db.js";
 
 export default {
   // name: 'PageName',
   setup(props) {
     const $q = useQuasar();
-    const store = useStore();
+
     // const currentDate = ref(dayjs().format("YYYY-MM-DD"));
-    const currentDate = computed(() =>
-      dayjs(store.state.example.currentlySelectedDateTime).format("YYYY-MM-DD")
-    ); // ref(dayjs().format("YYYY-MM-DD"));
+    let selectedDate = ref("2022-06-25");
+
+    const selectedDatetime = computed(() => {
+      let dt = DateTime.fromFormat(selectedDate.value, "yyyy-MM-dd");
+
+      return dt;
+    });
+
+    function addMinutes(noMinutes) {
+      let myStartTime = DateTime.fromFormat(selectedDate.value, shortFormat);
+
+      selectedDate.value = myStartTime
+        .plus({ minutes: noMinutes })
+        .toFormat(shortFormat);
+    }
 
     onMounted(() => {
       console.log("On mounted");
       createMetePlot();
-      plotMete(currentDate.value);
+      plotMete();
     });
 
-    watch(currentDate, (newVal, oldVal) => {
-      console.log("Wachting currentDate", newVal, oldVal);
+    watch(selectedDate, (newVal, oldVal) => {
+      console.log("Wachting selectedDate", newVal, oldVal);
       plotMete(newVal);
     });
 
     function plotMete(targetDate) {
       $q.loading.show();
       clearChart();
-      const nextDay = dayjs(targetDate).add(1, "day").format("YYYY-MM-DD");
+      const targetDay = selectedDatetime.value.toFormat(myFormatWithZ);
+      const nextDay = selectedDatetime.value
+        .plus({ days: 1 })
+        .toFormat(myFormatWithZ);
       const project_name = "immendingen";
-      const query = `from(bucket: "dauerauswertung_${project_name}") |> range(start: ${targetDate}, stop: ${nextDay}) |> filter(fn: (r) => r["_measurement"] == "messwerte_immendingen_mete") |> aggregateWindow(every: 300s, fn: mean)`;
-
+      const query = `from(bucket: "dauerauswertung_${project_name}") |> range(start: ${targetDay}, stop: ${nextDay}) |> filter(fn: (r) => r["_measurement"] == "messwerte_immendingen_mete") |> aggregateWindow(every: 300s, fn: mean)`;
+      console.log(query);
       return queryApi
         .collectRows(query)
         .then((rows) => {
@@ -82,6 +100,7 @@ export default {
           return meteCall.data;
         })
         .catch((e) => {
+          console.error(e);
           $q.notify({
             message: `Fehler beim Laden der Daten: ${e}`,
             type: "negative",
@@ -227,14 +246,16 @@ export default {
     function clearChart() {
       const graphDiv = document.getElementById("mete-charts");
 
-      console.log(graphDiv.data);
+      console.log("Graph-data:", graphDiv.data);
+      /*
 
       for (let p of [...graphDiv.data]) {
         p.x = [];
         p.y = [];
       }
+      */
 
-      // Plotly.deleteTraces(graphDiv, [...graphDiv.data.keys()]);
+      Plotly.deleteTraces(graphDiv, [...graphDiv.data.keys()]);
     }
 
     function updateChartData(updateData) {
@@ -326,13 +347,11 @@ export default {
         }
         myTraces.push(myTrace);
       }
+      console.log(myTraces);
       Plotly.addTraces(graphDiv, myTraces);
     }
-    function foo(args) {
-      store.commit("setDateTime", args);
-    }
 
-    return { currentDate, foo };
+    return { selectedDate, plotMete, addMinutes };
   },
 };
 </script>
