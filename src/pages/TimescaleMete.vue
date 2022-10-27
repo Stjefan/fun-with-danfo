@@ -1,5 +1,5 @@
 <template>
-  <q-page padding class="q-gutter-md">
+  <q-page padding>
     <!-- content -->
     <div class="row q-gutter-sm">
       <q-btn label="-24h" @click="addMinutes(-24 * 60)" />
@@ -13,11 +13,6 @@
 </template>
 
 <script>
-function updatePlotlyLayout(target, args) {
-  const graphDiv = document.getElementById(target);
-  Plotly.relayout(graphDiv, args);
-}
-
 import { onMounted, ref, watch, computed } from "vue";
 
 import Plotly from "plotly.js-dist-min";
@@ -32,9 +27,12 @@ import { queryApi, myFormat, myFormatWithZ, shortFormat } from "./db.js";
 import { mapState } from "pinia";
 import { useCounterStore } from "../stores/example-store";
 
+const urlFormat = "yyyy-MM-dd'T'HH'%3A'mm'%3A'ss";
+import { api } from "../boot/axios";
+
 export default {
   // name: 'PageName',
-  setup(props) {
+  setup() {
     const $q = useQuasar();
 
     const store = useCounterStore();
@@ -70,29 +68,44 @@ export default {
     function plotMete(targetDate) {
       $q.loading.show();
       clearChart();
-      const targetDay = selectedDatetime.value.toFormat(myFormatWithZ);
-      const nextDay = selectedDatetime.value
-        .plus({ days: 1 })
-        .toFormat(myFormatWithZ);
-      const project_name = "immendingen";
-      const query = `from(bucket: "dauerauswertung_${project_name}") |> range(start: ${targetDay}, stop: ${nextDay}) |> filter(fn: (r) => r["_measurement"] == "messwerte_immendingen_mete") |> aggregateWindow(every: 300s, fn: mean)`;
-      console.log(query);
-      return queryApi
-        .collectRows(query)
+      console.log("In readMete");
+      let myStartTime = DateTime.fromFormat(selectedDate.value, shortFormat);
+      const promises = [];
+      const from_date = myStartTime.plus({ hours: 0 }).toFormat(urlFormat);
+      const to_date = myStartTime.plus({ hours: 24 }).toFormat(urlFormat);
+      api
+        .get(
+          `http://localhost:8000/tsdb/mete?time_after=${from_date}&time_before=${to_date}`
+        )
+        .then((response) => {
+          console.log(response);
+          return response.data;
+        })
         .then((rows) => {
+          const groups = [
+            "humidity",
+            "pressure",
+            "rain",
+            "temperature",
+            // "time",
+            "winddirection",
+            "windspeed",
+          ];
           console.log(rows);
           if (rows.length == 0) throw new Error("No rows were returned");
-          let grouped = _.groupBy(rows, "_field");
 
-          console.log(grouped);
-
-          let result = {};
-
-          for (let g in grouped) {
+          const result = {};
+          for (let g of groups) {
             result[g] = {
-              x: grouped[g].map((i) => i._time),
-              y: grouped[g].map((i) => i._value),
+              x: [],
+              y: [],
             };
+          }
+          for (let g of groups) {
+            for (let r of rows) {
+              result[g].y.push(r[g]);
+              result[g].x.push(r["time"]);
+            }
           }
 
           return result;

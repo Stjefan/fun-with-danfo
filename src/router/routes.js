@@ -3,21 +3,35 @@ const routes = [
     path: "/",
     component: () => import("layouts/MainLayout.vue"),
     children: [
-      { path: "", component: () => import("pages/IndexPage.vue"), name: "mp" },
+      {
+        path: "",
+        component: () => import("pages/TimescaleFun.vue"),
+        name: "ts",
+      },
+      {
+        path: "bla",
+        component: () => import("pages/TimescaleMesspunkt.vue"),
+        name: "mp",
+      },
       {
         path: "io",
-        component: () => import("pages/ImmissionsortPage.vue"),
+        component: () => import("pages/TimescaleLr.vue"),
         name: "io",
       },
       {
         path: "mete",
-        component: () => import("pages/MetePage.vue"),
+        component: () => import("pages/TimescaleMete.vue"),
         name: "mete",
       },
       {
         path: "map",
         component: () => import("pages/KartePage.vue"),
         name: "map",
+      },
+      {
+        path: "settings",
+        component: () => import("pages/SettingsPage.vue"),
+        name: "settings",
       },
     ],
   },

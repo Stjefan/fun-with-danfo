@@ -2,6 +2,7 @@ export const config_mannheim = {
   initial_map_position: [49.523202, 8.4872387],
   project_id: 2,
   bezeichnung: "mannheim",
+  anzeige_bezeichnung: "Daimler Mannheim",
   hasMeteData: false,
   ios: [
     {
@@ -40,6 +41,7 @@ export const config_immendingen = {
   initial_map_position: [47.912783, 8.728536],
   project_id: 1,
   bezeichnung: "immendingen",
+  anzeige_bezeichnung: "Daimler Immendingen",
   hasMeteData: true,
   mps: [
     {

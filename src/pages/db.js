@@ -235,7 +235,27 @@ async function readIO(myStartTime, io, project_name) {
 }
 
 var plotly_config = { responsive: true, locale: "de" };
+
+const start_end_times = [
+  [0, 1],
+  [1, 2],
+  [2, 3],
+  [3, 4],
+  [4, 5],
+  [5, 6],
+  [6, 22],
+  [22, 23],
+  [23, 24],
+];
+
+const standard_layout_lr = {
+  title: "Beurteilungspegel",
+  xaxis: {
+    title: "Datum",
+  },
+};
 export {
+  standard_layout_lr,
   readIO,
   queryApi,
   myFormat,
@@ -243,4 +263,5 @@ export {
   shortFormat,
   plotly_config,
   readDashboardInformation,
+  start_end_times,
 };

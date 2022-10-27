@@ -24,6 +24,7 @@
         <q-btn flat label="Messpunkte" :to="{ name: 'mp' }" />
         <q-btn flat label="Wetter" :to="{ name: 'mete' }" />
         <q-btn flat label="Karte" :to="{ name: 'map' }" />
+        <q-btn flat label="Einstellungen" :to="{ name: 'settings' }" />
       </q-list>
     </q-drawer>
 
@@ -35,7 +36,7 @@
 
 <script>
 import { defineComponent, ref } from "vue";
-
+import { useCounterStore } from "../stores/example-store";
 export default defineComponent({
   name: "MainLayout",
 
@@ -43,6 +44,9 @@ export default defineComponent({
 
   setup() {
     const leftDrawerOpen = ref(false);
+    const store = useCounterStore();
+
+    store.loadProjects();
 
     return {
       leftDrawerOpen,

@@ -102,19 +102,28 @@ export default defineComponent({
 
       let myEndTime = myStartTime.plus({ minutes: 15 }).toFormat(myFormatWithZ);
 
-      const project_name = project.value.bezeichnung;
-
       console.log(project.value.selected_mp.name_in_api);
 
       const query_resu = `from(bucket: "dauerauswertung_immendingen") |> range(start: ${myStartTimeString}, stop: ${myEndTime}) |> filter(fn: (r) => r["_measurement"] == "messwerte_${project_name}_resu" and r["_field"] == "lafeq" and r["messpunkt"] == "${project.value.selected_mp.name_in_api}")`;
       console.log(query_resu);
       const query = `from(bucket: "dauerauswertung_immendingen") |> range(start: ${myStartTimeString}, stop: ${myEndTime}) |> filter(fn: (r) => r["_measurement"] == "auswertung_${project_name}_aussortierung")`;
+
+      const fluxQueryErkennung = `from(bucket: "dauerauswertung_immendingen")
+  |> range(start: ${myStartTimeString}, stop: ${myEndTime})
+  |> filter(fn: (r) => r["_measurement"] == "auswertung_${project_name}_erkennung")
+ |> sort(columns: ["_time"], desc: false)`;
+      console.log(fluxQueryErkennung);
       try {
         const data_resu = await queryApi.collectRows(query_resu);
         const df_resu = new DataFrame(data_resu);
 
         const data_aussortierung = await queryApi.collectRows(query);
         let data;
+
+        const data_erkennung = await queryApi.collectRows(fluxQueryErkennung);
+        const df_erkennung = new DataFrame(data_erkennung);
+
+        console.log("df_erkennung", df_erkennung);
 
         if (data_resu.length == 0) {
           throw new Error("No data available");
@@ -141,6 +150,20 @@ export default defineComponent({
             on: ["_time"],
             how: "left",
           });
+
+          console.log("Groups: ", df_erkennung.groupby(["_time"]));
+
+          if (false) {
+            let another_merge_df = merge({
+              left: merge_df,
+              right: df_erkennung,
+              on: ["_time"],
+              how: "left",
+            });
+
+            console.log("another_merge_df", another_merge_df);
+          }
+
           merge_df = merge_df.setIndex({ column: "_time" });
           let erkennungen = merge_df.apply(bla, { axis: 1 });
 
@@ -287,7 +310,7 @@ export default defineComponent({
         "hz20000",
       ];
 
-      const query = `from(bucket: "dauerauswertung_immendingen") |> range(start: ${myStartTimeString}, stop: ${myEndTimeString}) |> filter(fn: (r) => r["_measurement"] == "messwerte_${project_name}_terz" and r["messpunkt"] == "Mannheim MP 2")`;
+      const query = `from(bucket: "dauerauswertung_immendingen") |> range(start: ${myStartTimeString}, stop: ${myEndTimeString}) |> filter(fn: (r) => r["_measurement"] == "messwerte_${project_name}_terz" and r["messpunkt"] == "${project.value.selected_mp.name_in_api}")`;
       const myTimePoint = DateTime.fromFormat(selectedDatetime.value, myFormat);
       try {
         console.log(query);
@@ -402,6 +425,8 @@ export default defineComponent({
 
     const projects = [config_immendingen, config_mannheim];
     const project = ref(projects[0]);
+
+    const project_name = project.value.bezeichnung;
 
     const selectedMesspunkt = ref(project.value.mps[0]);
     return {

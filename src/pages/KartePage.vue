@@ -32,23 +32,23 @@ function createMap(myMesspunkte, myImmissionsorte, initalPosition) {
     }
   ).addTo(myMap);
 
-  /*
   let myBlueIcon = icon({
     iconUrl: require("assets/marker-icon-blue.png"), //"icons/marker-icon-blue.png",
   });
-  icon: myBlueIcon
-*/
+
   for (let p of myMesspunkte) {
-    marker(p.position, {}).addTo(myMap).bindPopup(p.name);
+    marker(p.position, { icon: myBlueIcon }).addTo(myMap).bindPopup(p.name);
   }
-  /*
-  let myIcon = icon({
+
+  let myRedIcon = icon({
     iconUrl: require("assets/marker-icon-red.png"), // "icons/marker-icon-red.png",
   });
-  */
+
   // console.log(myIcon);
   for (let p of myImmissionsorte) {
-    const m = marker(p.position).addTo(myMap).bindPopup(p.name);
+    const m = marker(p.position, { icon: myRedIcon })
+      .addTo(myMap)
+      .bindPopup(p.name);
     console.log(m);
     //console.log(m.getIcon());
   }
@@ -61,14 +61,17 @@ function createMap(myMesspunkte, myImmissionsorte, initalPosition) {
   // .openPopup();
   */
 }
+import { useCounterStore } from "../stores/example-store";
 export default {
   // name: 'ComponentName',
   setup() {
+    const store = useCounterStore();
+
     onMounted(() => {
       createMap(
-        config_immendingen.mps,
-        config_immendingen.ios,
-        config_immendingen.initial_map_position
+        store.selectedProject.mps,
+        store.selectedProject.ios,
+        store.selectedProject.initial_map_position
       );
     });
 

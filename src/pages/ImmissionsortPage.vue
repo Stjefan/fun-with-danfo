@@ -11,7 +11,7 @@
         :options="projects"
         label="Projekt"
         class="col-3"
-        option-label="bezeichnung"
+        option-label="anzeige_bezeichnung"
       />
       <q-select
         v-model="project.selected_io"
@@ -46,6 +46,7 @@ import { config_immendingen, config_mannheim } from "./project.js";
 
 config_immendingen["selected_io"] = config_immendingen.ios[0];
 config_mannheim["selected_io"] = config_mannheim.ios[0];
+import { useCounterStore } from "../stores/example-store";
 
 export default {
   // name: 'PageName',
@@ -60,8 +61,13 @@ export default {
     );
     */
 
+    const store = useCounterStore();
+
+    // const currentDate = ref(dayjs().format("YYYY-MM-DD"));
+    let selectedDate = ref(store.selectedDate.toFormat(shortFormat));
+
     const lr_plot_name = "plot_lr";
-    let selectedDate = ref("2022-06-25");
+    // let selectedDate = ref("2022-06-25");
 
     const standard_layout_lr = {
       title: "Beurteilungspegel",
@@ -123,6 +129,7 @@ export default {
       if (true) {
         layout = {
           ...standard_layout_lr,
+          title: `Beurteilungspegel an ${project.value.selected_io.name}`,
           yaxis: {
             title: "Lr(A)",
             range: [maxYAxis.value - intervalYAxis.value, maxYAxis.value],
