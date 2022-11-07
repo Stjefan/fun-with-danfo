@@ -18,7 +18,9 @@
       label="Messpunkt"
     />
     {{ selectedMesspunkt }}
-    <q-btn label="read" @click="read" />
+    <div class="row q-gutter-sm">
+      <q-btn label="read" @click="read" />
+    </div>
     <div id="plot-messpunkt" />
   </q-page>
 </template>
@@ -78,10 +80,11 @@ export default {
       const from_date = myStartTime.plus({ hours: 0 }).toFormat(urlFormat);
       const to_date = myStartTime.plus({ minutes: 15 }).toFormat(urlFormat);
 
-      const messpunkt_id = 7;
+      const messpunkt_id = selectedMesspunkt.value.id;
       api
         .get(
-          `http://localhost:8000/tsdb/evaluation?time_after=${from_date}&time_before=${to_date}&messpunkt=${messpunkt_id}`
+          //`/tsdb/evaluation/?time_after=${from_date}&time_before=${to_date}&messpunkt=${messpunkt_id}`
+          `/tsdb/more-mp/?time_after=${from_date}&time_before=${to_date}&messpunkt=${messpunkt_id}`
         )
         .then((response) => {
           console.log(response);

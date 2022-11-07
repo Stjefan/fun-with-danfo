@@ -15,7 +15,7 @@ import { useQuasar } from "quasar";
 import { readDashboardInformation } from "./db.js";
 
 function createMap(myMesspunkte, myImmissionsorte, initalPosition) {
-  var myMap = map("otherMap").setView([49.523202, 8.4872387], 13);
+  var myMap = map("otherMap").setView(initalPosition, 13);
 
   var tiles = tileLayer(
     "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
@@ -37,7 +37,7 @@ function createMap(myMesspunkte, myImmissionsorte, initalPosition) {
   });
 
   for (let p of myMesspunkte) {
-    marker([49.523202, 8.4872387], { icon: myBlueIcon })
+    marker([p.utm_x, p.utm_y], { icon: myBlueIcon })
       .addTo(myMap)
       .bindPopup(p.name);
   }
@@ -48,7 +48,7 @@ function createMap(myMesspunkte, myImmissionsorte, initalPosition) {
 
   // console.log(myIcon);
   for (let p of myImmissionsorte) {
-    const m = marker([49.523202, 8.4872387], { icon: myRedIcon })
+    const m = marker([p.utm_x, p.utm_y], { icon: myRedIcon })
       .addTo(myMap)
       .bindPopup(p.name);
     console.log(m);
@@ -71,11 +71,10 @@ export default {
 
     onMounted(() => {
       console.log(store.project.messpunkt_set);
-      createMap(
-        store.project.messpunkt_set,
-        store.project.immissionsort_set,
-        store.selectedProject.initial_map_position
-      );
+      createMap(store.project.messpunkt_set, store.project.immissionsort_set, [
+        store.project.utm_x,
+        store.project.utm_y,
+      ]);
     });
 
     function readDashboardInfos() {

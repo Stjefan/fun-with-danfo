@@ -73,9 +73,15 @@ export default {
       const promises = [];
       const from_date = myStartTime.plus({ hours: 0 }).toFormat(urlFormat);
       const to_date = myStartTime.plus({ hours: 24 }).toFormat(urlFormat);
+      const q = `/tsdb/mete/?time_after=${from_date}&time_before=${to_date}`;
+      console.log(q);
+
       api
         .get(
-          `http://localhost:8000/tsdb/mete?time_after=${from_date}&time_before=${to_date}`
+          // `/tsdb/mete/?messpunkt=&time_after=2022-10-01T00%3A01%3A00&time_before=2022-10-01T00%3A03%3A00`
+          // ?time_after=2022-10-30T00%3A00%3A00&time_before=2022-10-30T23%3A00%3A00/
+          q
+          // `/tsdb/mete/?time_after=${from_date}&time_before=${to_date}/`
         )
         .then((response) => {
           console.log(response);

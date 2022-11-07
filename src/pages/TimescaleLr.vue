@@ -50,6 +50,7 @@ import { mapState } from "pinia";
 import { useCounterStore } from "../stores/example-store";
 
 const urlFormat = "yyyy-MM-dd'T'HH'%3A'mm'%3A'ss";
+const urlFormatWithTZ = "yyyy-MM-dd'T'HH'%3A'mm'%3A'ss'%2B01'";
 import { api } from "../boot/axios";
 import { DateTime } from "luxon";
 
@@ -131,83 +132,79 @@ export default {
       if (selectedImmissionsort.value == null) {
         throw new Error("No IO selected");
       }
-      $q.loading.show();
+      if (true) {
+        $q.loading.show();
 
-      console.log("On mounted");
+        console.log("On mounted");
+        // simplePlot();
+        const idsBeurteilungszeitraum = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        const immissionsort_id = selectedImmissionsort.value.id;
+        console.log("In readLr");
 
-      // simplePlot();
-      const idsBeurteilungszeitraum = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-      const immissionsort_id = selectedImmissionsort.value.id;
-      console.log("In readLr");
-
-      let myStartTime = DateTime.fromFormat(selectedDate.value, shortFormat);
-      const promises = [];
-      for (let h of start_end_times) {
-        const from_date = myStartTime.plus({ hours: h[0] }).toFormat(urlFormat);
-        const to_date = myStartTime.plus({ hours: h[1] }).toFormat(urlFormat);
-        const nested_promise_array = [];
-        for (let ursache of store.project.laermursacheanimmissionsorten_set) {
-          nested_promise_array.push(
-            api
-              .get(
-                //"http://localhost:8000/tsdb/lr?time_after=2022-10-25+03%3A00%3A00&time_before=2022-10-25+04%3A00%3A00&immissionsort=6&verursacht=10"
-                `http://localhost:8000/tsdb/lr?time_after=${from_date}&time_before=${to_date}&immissionsort=${immissionsort_id}&verursacht=${ursache.id}`
-              )
-              .then((response) => ({
-                // console.log(response);
-                name: ursache.name,
-                x: response.data.map((i) => i.time),
-                y: response.data.map((i) => i.pegel),
-              }))
-          );
+        let myStartTime = DateTime.fromFormat(selectedDate.value, shortFormat);
+        const promises = [];
+        for (let h of start_end_times) {
+          const from_date = myStartTime
+            .plus({ hours: h[0] })
+            .toFormat(urlFormatWithTZ);
+          const to_date = myStartTime
+            .plus({ hours: h[1] })
+            .toFormat(urlFormatWithTZ);
+          const url = `http://kuf-srv-02/blub/bla/tsdb/more-lr/?time_after=${from_date}&time_before=${to_date}&immissionsort=${immissionsort_id}`;
+          const p = api.get(url);
+          promises.push(p);
         }
-        promises.push(Promise.all(nested_promise_array));
-      }
 
-      return (
-        Promise.all(promises)
-          .then((lrCalls) => {
-            console.log(lrCalls);
-            const totalResult = {};
-            for (let beurteilungszeitraum of idsBeurteilungszeitraum) {
-              let result = {};
-              const grenzwert =
-                beurteilungszeitraum != 6
-                  ? selectedImmissionsort.value.grenzwert_nacht
-                  : selectedImmissionsort.value.grenzwert_tag;
-              if (lrCalls[beurteilungszeitraum][0].x.length > 0) {
-                lrCalls[beurteilungszeitraum].unshift({
-                  // console.log(response);
-                  name: "Grenzwert",
-                  x: lrCalls[beurteilungszeitraum][0].x,
-                  y: lrCalls[beurteilungszeitraum][0].x.map((i) => grenzwert),
-                });
+        return (
+          Promise.all(promises)
+            .then((lrCalls) => {
+              console.log(lrCalls);
+              const totalResult = {};
+              updateChartData(lrCalls.map((i) => i.data));
+              /*
+              updateLayout(
+                selectedDate.value,
+                maxYAxisLr.value,
+                intervalYAxisLr.value
+              );
+              */
+              if (false) {
+                for (let beurteilungszeitraum of idsBeurteilungszeitraum) {
+                  let result = {};
+                  const grenzwert =
+                    beurteilungszeitraum != 6
+                      ? selectedImmissionsort.value.grenzwert_nacht
+                      : selectedImmissionsort.value.grenzwert_tag;
+                  if (lrCalls[beurteilungszeitraum].ts.length > 0) {
+                    lrCalls[beurteilungszeitraum].unshift({
+                      // console.log(response);
+                      name: "Grenzwert",
+                      x: lrCalls[beurteilungszeitraum][0].x,
+                      y: lrCalls[beurteilungszeitraum][0].x.map(
+                        (i) => grenzwert
+                      ),
+                    });
+                  }
+                }
+
+                // console.log(result);
               }
-            }
+            })
 
-            updateChartData(lrCalls);
-            updateLayout(
-              selectedDate.value,
-              maxYAxisLr.value,
-              intervalYAxisLr.value
-            );
-
-            // console.log(result);
-          })
-
-          //console.log("Promise ended", totalResult);
-          .catch((e) => {
-            console.log("error catch with then / catch:", e);
-            $q.notify({
-              message: `Fehler beim Laden der Daten: ${e}`,
-              type: "negative",
-            });
-          })
-          .finally(() => {
-            console.log("Run finally block...");
-            $q.loading.hide();
-          })
-      );
+            //console.log("Promise ended", totalResult);
+            .catch((e) => {
+              console.log("error catch with then / catch:", e);
+              $q.notify({
+                message: `Fehler beim Laden der Daten: ${e}`,
+                type: "negative",
+              });
+            })
+            .finally(() => {
+              console.log("Run finally block...");
+              $q.loading.hide();
+            })
+        );
+      }
     }
 
     function updatePlotlyLayout(target, args) {
@@ -223,8 +220,10 @@ export default {
       const idsBeurteilungszeitraum = [0, 1, 2, 3, 4, 5, 6, 7, 8];
       let hasBeenExecuted = {};
       let already_found_non_empty_sequence = false;
+      const graphDiv = document.getElementById("lrPlot");
       for (let j of idsBeurteilungszeitraum) {
-        const graphDiv = document.getElementById("lrPlot");
+        console.log("Update with", updateData[j]);
+
         //console.log(j);
         //console.log(graphDiv.data);
         const indices = graphDiv.data
@@ -252,17 +251,17 @@ export default {
           myTraces.push(myTrace);
         }
         */
-        console.log(updateData[j]);
+
         let iteration = 0;
         let has_elements = false;
-
+        console.log("Before Iteration");
         for (let q of updateData[j]) {
-          has_elements = q.x.length > 0;
+          has_elements = q.ts.length > 0;
           console.log(q);
 
           const myTrace = {
-            x: q.x,
-            y: q.y,
+            x: q.ts.map((i) => i.time),
+            y: q.ts.map((i) => i.pegel),
             xaxis: `x${j + 1}`,
             yaxis: `y${j + 1}`,
             line: {
@@ -279,12 +278,21 @@ export default {
         }
         if (has_elements) {
           already_found_non_empty_sequence = true;
+        } else {
+          const emptyTrace = {
+            x: [],
+            y: [],
+            xaxis: `x${j + 1}`,
+            yaxis: `y${j + 1}`,
+          };
+          myTraces.push(emptyTrace);
         }
+      }
+      console.log("mytraces", myTraces);
 
-        if (myTraces.length > 0) {
-          // console.log(hasBeenExecuted);
-          Plotly.addTraces(graphDiv, myTraces);
-        }
+      if (myTraces.length > 0) {
+        // console.log(hasBeenExecuted);
+        Plotly.addTraces(graphDiv, myTraces);
       }
     }
     function getColor(j) {

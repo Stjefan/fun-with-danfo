@@ -33,7 +33,7 @@ export const useCounterStore = defineStore("counter", {
       console.log("In load");
       return api
         .get(
-          `http://localhost:8000/tsdb/projekt?name__icontains=${project_2_show}`
+          `http://kuf-srv-02/blub/bla/tsdb/projekt/?name__icontains=${project_2_show}`
         )
         .then((response) => {
           console.log(response);
@@ -41,11 +41,22 @@ export const useCounterStore = defineStore("counter", {
         });
     },
     async loadProjects() {
-      console.log("In load");
-      return api.get(`http://localhost:8000/tsdb/projekt`).then((response) => {
-        console.log(response);
-        this.projects = response.data;
-      });
+      console.log("In loadProjects");
+      this.load();
+      return api
+        .get(
+          `/tsdb/projekt/`
+          // `https://www.kuf-remote.de/blub/bla/projekt/`
+          // `http://localhost:8000/tsdb/projekt`
+        )
+        .then((response) => {
+          console.log(response);
+          this.projects = response.data;
+        })
+        .catch((err) => {
+          console.log(err);
+          throw err;
+        });
     },
   },
 });
