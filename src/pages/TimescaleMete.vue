@@ -7,7 +7,6 @@
       <q-btn label="+24h" @click="addMinutes(24 * 60)" />
     </div>
     <q-btn label="Aktualisieren" @click="plotMete" />
-    {{ store.selectedDatetime }}
     <div id="mete-charts" style="height: 75vh" />
   </q-page>
 </template>
@@ -38,7 +37,17 @@ export default {
     const store = useCounterStore();
 
     // const currentDate = ref(dayjs().format("YYYY-MM-DD"));
-    let selectedDate = ref(store.selectedDate.toFormat(shortFormat));
+    // let selectedDate = ref(store.selectedDate.toFormat(shortFormat));
+
+    const selectedDate = computed({
+      get: () => store.selectedDatetime.toFormat(shortFormat),
+      set: (val) => {
+        console.log("Setter is called", val);
+        store.$patch({
+          selectedDatetime: DateTime.fromFormat(val, shortFormat),
+        });
+      },
+    });
 
     const selectedDatetime = computed(() => {
       let dt = DateTime.fromFormat(selectedDate.value, "yyyy-MM-dd");

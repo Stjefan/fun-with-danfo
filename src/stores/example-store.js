@@ -15,6 +15,8 @@ export const useCounterStore = defineStore("counter", {
     selectedDatetime: DateTime.now().plus({ hours: -24 * 3 }),
     projects: [],
     selectedProject: config_immendingen,
+    selectedImmissionsort: null,
+    selectedMesspunkt: null,
     project: null,
   }),
   getters: {
@@ -56,6 +58,22 @@ export const useCounterStore = defineStore("counter", {
         .catch((err) => {
           console.log(err);
           throw err;
+        });
+    },
+    async setProject(projektbezeichnung) {
+      return api
+        .get(
+          `http://kuf-srv-02/blub/bla/tsdb/projekt/?name__icontains=${projektbezeichnung}`
+        )
+        .then((response) => {
+          console.log(response);
+          this.project = response.data[0];
+          this.selectedImmissionsort = this.project.immissionsort_set[0];
+          this.selectedMesspunkt = this.project.messpunkt_set[0];
+          this.project.has_mete = this.project.messpunkt_set.some(
+            (mp) => mp.is_meteo_station
+          );
+          return this.project;
         });
     },
   },

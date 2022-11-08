@@ -17,8 +17,7 @@
         v-model.number="intervalYAxisLr"
         label="Intervall Y-Achse Lr"
       />
-      <q-btn label="Lr" @click="plotLr" />
-      <q-btn label="proj" @click="blub" />
+
       <q-select
         class="col-3"
         v-model="selectedImmissionsort"
@@ -26,7 +25,9 @@
         :options="immissionsortOptions"
         label="Immissionsort"
       />
-      {{ selectedImmissionsort }}
+    </div>
+    <div class="row q-gutter-md">
+      <q-btn label="Aktualisieren" @click="plotLr" />
     </div>
     <div id="lrPlot" style="height: 80vh"></div>
   </q-page>
@@ -143,6 +144,7 @@ export default {
 
         let myStartTime = DateTime.fromFormat(selectedDate.value, shortFormat);
         const promises = [];
+        let beurteilungszeitraum = 0;
         for (let h of start_end_times) {
           const from_date = myStartTime
             .plus({ hours: h[0] })
@@ -150,9 +152,31 @@ export default {
           const to_date = myStartTime
             .plus({ hours: h[1] })
             .toFormat(urlFormatWithTZ);
-          const url = `http://kuf-srv-02/blub/bla/tsdb/more-lr/?time_after=${from_date}&time_before=${to_date}&immissionsort=${immissionsort_id}`;
-          const p = api.get(url);
+          const url = `/tsdb/more-lr/?time_after=${from_date}&time_before=${to_date}&immissionsort=${immissionsort_id}`;
+          const p = api.get(url).then((response) => {
+            const grenzwert =
+              beurteilungszeitraum != 6
+                ? selectedImmissionsort.value.grenzwert_nacht
+                : selectedImmissionsort.value.grenzwert_tag;
+            response.data.unshift({
+              name: "Grenzwert",
+              ts: [
+                {
+                  time: myStartTime.plus({ hours: h[0] }).toFormat(myFormat),
+                  pegel: grenzwert,
+                },
+                {
+                  time: myStartTime
+                    .plus({ hours: h[1], seconds: -1 })
+                    .toFormat(myFormat),
+                  pegel: grenzwert,
+                },
+              ],
+            });
+            return response.data;
+          });
           promises.push(p);
+          beurteilungszeitraum++;
         }
 
         return (
@@ -160,14 +184,14 @@ export default {
             .then((lrCalls) => {
               console.log(lrCalls);
               const totalResult = {};
-              updateChartData(lrCalls.map((i) => i.data));
-              /*
+              updateChartData(lrCalls);
+
               updateLayout(
                 selectedDate.value,
                 maxYAxisLr.value,
                 intervalYAxisLr.value
               );
-              */
+
               if (false) {
                 for (let beurteilungszeitraum of idsBeurteilungszeitraum) {
                   let result = {};
@@ -466,7 +490,17 @@ export default {
         );
     }
 
-    const selectedImmissionsort = ref(null);
+    const selectedImmissionsort = computed({
+      get: () => {
+        return store.selectedImmissionsort;
+      },
+      set: (val) => {
+        console.log("Setter is called");
+        store.$patch({
+          selectedImmissionsort: val,
+        });
+      },
+    });
 
     const immissionsortOptions = computed(() => {
       return store.project?.immissionsort_set;

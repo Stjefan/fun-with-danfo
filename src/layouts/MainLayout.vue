@@ -22,9 +22,16 @@
         <q-item-label header> Dashboards </q-item-label>
         <q-btn flat label="Immissionsorte" :to="{ name: 'io' }" />
         <q-btn flat label="Messpunkte" :to="{ name: 'mp' }" />
-        <q-btn flat label="Wetter" :to="{ name: 'mete' }" />
+        <q-btn
+          flat
+          label="Wetter"
+          :to="{ name: 'mete' }"
+          v-if="store.project.has_mete"
+        />
         <q-btn flat label="Karte" :to="{ name: 'map' }" />
+        <!--
         <q-btn flat label="Einstellungen" :to="{ name: 'settings' }" />
+        -->
       </q-list>
     </q-drawer>
 
@@ -46,10 +53,11 @@ export default defineComponent({
     const leftDrawerOpen = ref(false);
     const store = useCounterStore();
 
-    store.loadProjects();
+    // store.loadProjects();
 
     return {
       leftDrawerOpen,
+      store,
       toggleLeftDrawer() {
         leftDrawerOpen.value = !leftDrawerOpen.value;
       },

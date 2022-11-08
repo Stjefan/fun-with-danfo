@@ -1,6 +1,24 @@
+import { useCounterStore } from "../stores/example-store";
+
 const routes = [
   {
-    path: "/",
+    path: "/:project/",
+    beforeEnter: async (to, from) => {
+      // reject the navigation
+      console.log("BeforeEnter is called", to, from);
+      console.log(to.params.project);
+      const store = useCounterStore();
+      console.log();
+      console.log("Is store available?", store);
+      try {
+        ["mannheim", "immendingen", "debug"].includes(to.params.project);
+        await store.setProject(to.params.project);
+        return true;
+      } catch (e) {
+        console.log(e);
+        return false;
+      }
+    },
     component: () => import("layouts/MainLayout.vue"),
     children: [
       {
