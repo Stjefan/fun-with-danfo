@@ -31,17 +31,7 @@ export const useCounterStore = defineStore("counter", {
     increment() {
       this.counter++;
     },
-    async load() {
-      console.log("In load");
-      return api
-        .get(
-          `http://kuf-srv-02/blub/bla/tsdb/projekt/?name__icontains=${project_2_show}`
-        )
-        .then((response) => {
-          console.log(response);
-          this.project = response.data[0];
-        });
-    },
+    async load() {},
     async loadProjects() {
       console.log("In loadProjects");
       this.load();
@@ -62,9 +52,7 @@ export const useCounterStore = defineStore("counter", {
     },
     async setProject(projektbezeichnung) {
       return api
-        .get(
-          `http://kuf-srv-02/blub/bla/tsdb/projekt/?name__icontains=${projektbezeichnung}`
-        )
+        .get(`/tsdb/projekt/?name__icontains=${projektbezeichnung}`)
         .then((response) => {
           console.log(response);
           this.project = response.data[0];

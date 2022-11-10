@@ -69,7 +69,6 @@ import locale from "plotly.js-locales/de";
 // then
 Plotly.register(locale);
 
-
 export default {
   // name: 'PageName',
   setup() {
@@ -188,6 +187,12 @@ export default {
           data.push(trace3);
           // df[s].plot("plot_lr").line({ config, layout });
           Plotly.newPlot("plot-messpunkt", data, layout, plotly_config);
+          updatePlotlyLayout("plot-messpunkt", {
+            "yaxis.range": [
+              maxYAxis1.value - intervalYAxis1.value,
+              maxYAxis1.value,
+            ],
+          });
         });
       const p2 = api
         .get(

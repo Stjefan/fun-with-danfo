@@ -243,7 +243,7 @@ export default {
       const myTraces = [];
       const idsBeurteilungszeitraum = [0, 1, 2, 3, 4, 5, 6, 7, 8];
       let hasBeenExecuted = {};
-      let already_found_non_empty_sequence = false;
+      let already_found_non_empty_sequence = {};
       const graphDiv = document.getElementById("lrPlot");
       for (let j of idsBeurteilungszeitraum) {
         console.log("Update with", updateData[j]);
@@ -293,23 +293,17 @@ export default {
             },
             legendgroup: q.name,
 
-            showlegend: !already_found_non_empty_sequence && has_elements,
+            showlegend:
+              !already_found_non_empty_sequence[q.name] && has_elements,
             name: q.name,
           };
 
+          if (has_elements) {
+            already_found_non_empty_sequence[q.name] = true;
+          }
+
           myTraces.push(myTrace);
           iteration++;
-        }
-        if (has_elements) {
-          already_found_non_empty_sequence = true;
-        } else {
-          const emptyTrace = {
-            x: [],
-            y: [],
-            xaxis: `x${j + 1}`,
-            yaxis: `y${j + 1}`,
-          };
-          myTraces.push(emptyTrace);
         }
       }
       console.log("mytraces", myTraces);
@@ -463,12 +457,15 @@ export default {
           maxYAxisLr,
         ];
       }
+      const myDateAsDatetime = DateTime.fromFormat(myDate, "yyyy-MM-dd");
       myUpdateArgs = {
         ...myUpdateArgs,
         ...{
           title:
             selectedImmissionsort.value != null
-              ? `IO ${selectedImmissionsort.value.id_external} - ${selectedImmissionsort.value.name} am ${myDate}`
+              ? `IO ${selectedImmissionsort.value.id_external} - ${
+                  selectedImmissionsort.value.name
+                } am ${myDateAsDatetime.toFormat("dd.MM.yy")}`
               : "",
         },
       };

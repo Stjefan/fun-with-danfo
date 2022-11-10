@@ -27,7 +27,7 @@ const routes = [
         name: "ts",
       },
       {
-        path: "bla",
+        path: "mp",
         component: () => import("pages/TimescaleMesspunkt.vue"),
         name: "mp",
       },
