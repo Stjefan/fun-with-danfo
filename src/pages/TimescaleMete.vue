@@ -6,7 +6,7 @@
       <q-input type="date" v-model="selectedDate" />
       <q-btn label="+24h" @click="addMinutes(24 * 60)" />
     </div>
-    <q-btn label="Aktualisieren" @click="plotMete" />
+    <q-btn icon="refresh" @click="plotMete" />
     <div id="mete-charts" style="height: 75vh" />
   </q-page>
 </template>
@@ -217,6 +217,9 @@ export default {
           domain: {
             x: [0.65, 1],
             y: [0.25, 1],
+          },
+          angularaxis: {
+            direction: "clockwise",
           },
           radialaxis: {
             type: "date",

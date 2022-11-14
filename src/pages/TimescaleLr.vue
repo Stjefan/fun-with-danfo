@@ -27,7 +27,7 @@
       />
     </div>
     <div class="row q-gutter-md">
-      <q-btn label="Aktualisieren" @click="plotLr" />
+      <q-btn icon="refresh" @click="plotLr" />
     </div>
     <div id="lrPlot" style="height: 80vh"></div>
   </q-page>

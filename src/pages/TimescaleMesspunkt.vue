@@ -37,7 +37,7 @@
         :options="messpunktOptions"
         label="Messpunkt"
       />
-      <q-btn label="Daten laden" @click="read" />
+      <q-btn icon="refresh" @click="read" />
     </div>
     <div id="plot-messpunkt" />
     <div id="plot-terz" />
@@ -50,7 +50,7 @@ const urlFormat = "yyyy-MM-dd'T'HH'%3A'mm'%3A'ss";
 import Plotly from "plotly.js-dist-min";
 import { api } from "../boot/axios";
 import { DateTime } from "luxon";
-import { ref, computed, watch, onErrorCaptured } from "vue";
+import { ref, computed, watch, onErrorCaptured, onMounted } from "vue";
 import {
   readIO,
   myFormat,
@@ -437,6 +437,11 @@ export default {
           }
         });
     }
+
+    onMounted(() => {
+      //loadPegelZeitverlauf();
+      // loadTerzpegel();
+    });
 
     return {
       selectedMesspunkt,

@@ -8,7 +8,7 @@ import axios from "axios";
 // "export default () => {}" function below (which runs individually
 // for each client)
 const api = axios.create({
-  baseURL: "https://www.kuf-remote.de/blub/bla",
+  baseURL: "https://www.kuf-remote.de/webservices",
   // "http://kuf-srv-02/blub/bla",
 });
 
