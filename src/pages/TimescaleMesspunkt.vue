@@ -83,6 +83,9 @@ export default {
     const intervalYAxis2 = ref(60);
     const maxYAxis2 = ref(60);
 
+    const loading1 = ref(false);
+    const loading2 = ref(false);
+
     const selectedDatetime = computed({
       get: () => store.selectedDatetime.toFormat("yyyy-MM-dd'T'HH:mm:ss"),
       set: (val) => {
@@ -94,8 +97,8 @@ export default {
     });
 
     function updatePlotlyLayout(target, args) {
+      console.log("Updating layout");
       const graphDiv = document.getElementById(target);
-      console.log("Before error?");
       Plotly.relayout(graphDiv, args);
     }
 
@@ -119,7 +122,6 @@ export default {
     }
 
     function read() {
-      $q.loading.show();
       console.log("In read");
       let myStartTime = DateTime.fromFormat(
         selectedDatetimeFloor.value,
@@ -197,7 +199,11 @@ export default {
       const p2 = api
         .get(
           //`/tsdb/evaluation/?time_after=${from_date}&time_before=${to_date}&messpunkt=${messpunkt_id}`
-          `/tsdb/terz/?time_after=${from_date}&time_before=${to_date}&messpunkt=${messpunkt_id}`
+          `/tsdb/terz/?time_after=${store.selectedDatetime.toFormat(
+            urlFormat
+          )}&time_before=${store.selectedDatetime.toFormat(
+            urlFormat
+          )}&messpunkt=${messpunkt_id}`
         )
         .then((response) => {
           console.log(response);
@@ -239,13 +245,11 @@ export default {
             Plotly.newPlot("plot-terz", [], layout, plotly_config);
           }
         });
-      return Promise.all([p1, p2])
-        .catch((e) => {
-          console.log(e);
+      return Promise.all([p1, p2]).catch((e) => {
+        console.log(e);
 
-          throw e;
-        })
-        .finally(() => $q.loading.hide());
+        throw e;
+      });
     }
 
     onErrorCaptured((err, instance, info) => {
@@ -268,6 +272,171 @@ export default {
         });
       },
     });
+    watch([maxYAxis1, intervalYAxis1], (val) => {
+      updatePlotlyLayout("plot-messpunkt", {
+        "yaxis.range": [
+          maxYAxis1.value - intervalYAxis1.value,
+          maxYAxis1.value,
+        ],
+      });
+    });
+
+    watch([maxYAxis2, intervalYAxis2], (val) => {
+      updatePlotlyLayout("plot-terz", {
+        "yaxis.range": [
+          maxYAxis2.value - intervalYAxis2.value,
+          maxYAxis2.value,
+        ],
+      });
+    });
+
+    watch([selectedDatetimeFloor, selectedMesspunkt], (val) => {
+      loadPegelZeitverlauf();
+    });
+
+    watch([loading1, loading2], (val) => {
+      if (loading1.value || loading2.value) $q.loading.show();
+      else $q.loading.hide();
+    });
+
+    function loadPegelZeitverlauf() {
+      loading1.value = true;
+      let myStartTime = DateTime.fromFormat(
+        selectedDatetimeFloor.value,
+        myFormat
+      );
+      const from_date = myStartTime.plus({ hours: 0 }).toFormat(urlFormat);
+      const to_date = myStartTime.plus({ minutes: 15 }).toFormat(urlFormat);
+
+      const messpunkt_id = selectedMesspunkt.value.id;
+      const p1 = api
+        .get(
+          //`/tsdb/evaluation/?time_after=${from_date}&time_before=${to_date}&messpunkt=${messpunkt_id}`
+          `/tsdb/more-mp/?time_after=${from_date}&time_before=${to_date}&messpunkt=${messpunkt_id}&projekt=${store.project.id}`
+        )
+        .then((response) => {
+          console.log(response);
+          console.log(response.data.filter((i) => i["rejected"] != null));
+
+          const values = response.data;
+
+          const layout = {
+            title: `${selectedMesspunkt.value.name}`,
+            yaxis: {
+              title: "LAFeq",
+              // range: [maxYAxis.value - intervalYAxis.value, maxYAxis.value],
+            },
+            xaxis: {
+              title: "Datum",
+              type: "date",
+            },
+          };
+
+          const data = [];
+          const trace1 = {
+            x: values.map((i) => i.time),
+            y: values.map((i) => i.lafeq),
+            name: `Relevanter Pegel`,
+            mode: "lines+markers",
+            marker: {
+              size: 2,
+            },
+          };
+          const trace2 = {
+            x: values.map((i) => i.time),
+            y: values.map((i) => i.rejected),
+            name: `Sekunde nicht verwertbar`,
+            mode: "lines+markers",
+            marker: {
+              size: 2,
+            },
+          };
+
+          const trace3 = {
+            x: values.map((i) => i.time),
+            y: values.map((i) => i.detected),
+            name: `Ereignis`,
+            mode: "lines+markers",
+            marker: {
+              size: 2,
+            },
+          };
+          data.push(trace1);
+          data.push(trace2);
+          data.push(trace3);
+          // df[s].plot("plot_lr").line({ config, layout });
+          Plotly.newPlot("plot-messpunkt", data, layout, plotly_config);
+          updatePlotlyLayout("plot-messpunkt", {
+            "yaxis.range": [
+              maxYAxis1.value - intervalYAxis1.value,
+              maxYAxis1.value,
+            ],
+          });
+        })
+        .finally(() => {
+          loading1.value = false;
+        });
+    }
+
+    watch([selectedDatetime, selectedMesspunkt], (val) => {
+      loadTerzpegel();
+    });
+
+    function loadTerzpegel() {
+      loading2.value = true;
+      const messpunkt_id = selectedMesspunkt.value.id;
+      const p2 = api
+        .get(
+          //`/tsdb/evaluation/?time_after=${from_date}&time_before=${to_date}&messpunkt=${messpunkt_id}`
+          `/tsdb/terz/?time_after=${store.selectedDatetime.toFormat(
+            urlFormat
+          )}&time_before=${store.selectedDatetime.toFormat(
+            urlFormat
+          )}&messpunkt=${messpunkt_id}`
+        )
+        .then((response) => {
+          console.log(response);
+          const layout = {
+            title: `Terzfrequenzen um ${store.selectedDatetime.toFormat(
+              "HH:mm:ss"
+            )}`,
+            yaxis: {
+              title: "LZ",
+              // range: [maxYAxis.value - intervalYAxis.value, maxYAxis.value],
+            },
+          };
+          const corresponding_terz = response.data.find(
+            (i) =>
+              i.time.substring(0, 19) ===
+              store.selectedDatetime.toFormat("yyyy-MM-dd'T'HH:mm:ss")
+          );
+          console.log(corresponding_terz);
+          const frequenciesWithsValues = [];
+          try {
+            for (let f of frequencies_fields) {
+              frequenciesWithsValues.push(corresponding_terz[f]);
+            }
+            const data = [
+              {
+                x: frequencies,
+                y: frequenciesWithsValues,
+                type: "bar",
+              },
+            ];
+            Plotly.newPlot("plot-terz", data, layout, plotly_config);
+            updatePlotlyLayout("plot-terz", {
+              "yaxis.range": [
+                maxYAxis2.value - intervalYAxis2.value,
+                maxYAxis2.value,
+              ],
+            });
+          } catch (ex) {
+            Plotly.newPlot("plot-terz", [], layout, plotly_config);
+          } finally {
+            loading2.value = false;
+          }
+        });
+    }
 
     return {
       selectedMesspunkt,

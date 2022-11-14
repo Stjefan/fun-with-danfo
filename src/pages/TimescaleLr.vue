@@ -507,6 +507,10 @@ export default {
       return store.project?.laermursachenanimmissionsorten_set;
     });
 
+    watch([selectedDate, selectedImmissionsort], (val) => {
+      plotLr();
+    });
+
     return {
       raiseError,
       foo,

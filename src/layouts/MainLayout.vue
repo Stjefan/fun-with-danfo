@@ -20,18 +20,16 @@
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
       <q-list>
         <q-item-label header> Dashboards </q-item-label>
-        <q-btn flat label="Immissionsorte" :to="{ name: 'io' }" />
-        <q-btn flat label="Messpunkte" :to="{ name: 'mp' }" />
-        <q-btn
-          flat
-          label="Wetter"
-          :to="{ name: 'mete' }"
-          v-if="store.project.has_mete"
-        />
-        <q-btn flat label="Karte" :to="{ name: 'map' }" />
-        <!--
-        <q-btn flat label="Einstellungen" :to="{ name: 'settings' }" />
-        -->
+        <q-list>
+          <q-item clickable v-ripple :to="{ name: 'mp' }"
+            ><q-item-section> Messpunkte </q-item-section></q-item
+          >
+          <q-item clickable v-ripple :to="{ name: 'io' }"
+            >Immissionsorte</q-item
+          >
+          <q-item clickable v-ripple :to="{ name: 'mete' }">Wetter</q-item>
+          <q-item clickable v-ripple :to="{ name: 'map' }">Karte</q-item>
+        </q-list>
       </q-list>
     </q-drawer>
 
@@ -42,16 +40,35 @@
 </template>
 
 <script>
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, watch } from "vue";
 import { useCounterStore } from "../stores/example-store";
+
+import { useRouter, useRoute } from "vue-router";
+
 export default defineComponent({
   name: "MainLayout",
 
   components: {},
 
   setup() {
-    const leftDrawerOpen = ref(false);
+    const route = useRoute();
     const store = useCounterStore();
+    // fetch the user information when params change
+    watch(
+      () => route.params.project,
+      async (newId) => {
+        console.log(route.params, newId);
+
+        console.log("Is store available?", store);
+        ["mannheim", "immendingen", "debug"].includes(route.params.project);
+        await store.setProject(route.params.project);
+      },
+      {
+        immediate: true,
+      }
+    );
+
+    const leftDrawerOpen = ref(false);
 
     // store.loadProjects();
 

@@ -144,8 +144,8 @@ module.exports = configure(function (ctx) {
       },
 
       manifest: {
-        name: `Another Dashboard`,
-        short_name: `Another Dashboard`,
+        name: `ViewMes - Long`,
+        short_name: `ViewMes`,
         description: `A Quasar Project`,
         display: "standalone",
         orientation: "portrait",

@@ -6,6 +6,7 @@ const routes = [
     beforeEnter: async (to, from) => {
       // reject the navigation
       console.log("BeforeEnter is called", to, from);
+      /*
       console.log(to.params.project);
       const store = useCounterStore();
       console.log();
@@ -18,6 +19,7 @@ const routes = [
         console.log(e);
         return false;
       }
+      */
     },
     component: () => import("layouts/MainLayout.vue"),
     children: [
