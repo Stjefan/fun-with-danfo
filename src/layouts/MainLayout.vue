@@ -13,7 +13,7 @@
 
         <q-toolbar-title> ViewMes</q-toolbar-title>
 
-        <div>v 2022-10a</div>
+        <div>v 2022-11a</div>
       </q-toolbar>
     </q-header>
 
@@ -27,7 +27,13 @@
           <q-item clickable v-ripple :to="{ name: 'io' }"
             >Immissionsorte</q-item
           >
-          <q-item clickable v-ripple :to="{ name: 'mete' }">Wetter</q-item>
+          <q-item
+            clickable
+            v-ripple
+            v-if="store.showMete"
+            :to="{ name: 'mete' }"
+            >Wetter</q-item
+          >
           <q-item clickable v-ripple :to="{ name: 'map' }">Karte</q-item>
         </q-list>
       </q-list>

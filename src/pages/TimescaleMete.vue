@@ -219,6 +219,17 @@ export default {
           title: "Regen [mm]",
           range: [0, 10],
         },
+        xaxis2: {
+          domain: [0, 0.5],
+          anchor: "y2",
+          type: "date",
+          // range: [shownDate.getTime(), shownDate.getTime() + 24 * 3600 * 1000],
+        },
+        yaxis2: {
+          domain: [0.25, 0.48],
+          anchor: "x2",
+          title: "Temperatur [°C]",
+        },
         polar: {
           domain: {
             x: [0.65, 1],
@@ -233,17 +244,7 @@ export default {
             //range: [shownDate.getTime(), shownDate.getTime() + 24 * 3600 * 1000],
           },
         },
-        xaxis2: {
-          domain: [0, 0.5],
-          anchor: "y2",
-          type: "date",
-          // range: [shownDate.getTime(), shownDate.getTime() + 24 * 3600 * 1000],
-        },
-        yaxis2: {
-          domain: [0.25, 0.48],
-          anchor: "x2",
-          title: "Temperatur [°C]",
-        },
+
         xaxis3: {
           domain: [0, 0.5],
           anchor: "y3",
