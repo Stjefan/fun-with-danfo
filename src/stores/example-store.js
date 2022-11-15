@@ -12,12 +12,18 @@ const project_2_show = "mannheim";
 export const useCounterStore = defineStore("counter", {
   state: () => ({
     counter: 0,
-    selectedDatetime: DateTime.now().plus({ hours: -24 * 3 }),
+    selectedDatetime: DateTime.now().plus({ hours: -24 * 1 }),
     projects: [],
     selectedProject: config_immendingen,
     selectedImmissionsort: null,
     selectedMesspunkt: null,
     project: null,
+
+    maxYAxisMesspunkt: 80,
+    intervalYAxisMesspunkt: 80,
+
+    maxYAxisTerz: 80,
+    intervalYAxisTerz: 80,
   }),
   getters: {
     doubleCount: (state) => state.counter * 2,

@@ -37,8 +37,15 @@
         :options="messpunktOptions"
         label="Messpunkt"
       />
-      <q-btn icon="refresh" @click="read" />
     </div>
+    <div class="row">
+      <q-btn
+        icon="refresh"
+        style="margin-top: 5px; margin-bottom: 5px"
+        @click="read"
+      />
+    </div>
+
     <div id="plot-messpunkt" />
     <div id="plot-terz" />
   </q-page>
@@ -77,11 +84,11 @@ export default {
     const laermursachen = ref([]);
     const store = useCounterStore();
 
-    const intervalYAxis1 = ref(60);
-    const maxYAxis1 = ref(60);
+    const intervalYAxis1 = ref(store.intervalYAxisMesspunkt);
+    const maxYAxis1 = ref(store.maxYAxisMesspunkt);
 
-    const intervalYAxis2 = ref(60);
-    const maxYAxis2 = ref(60);
+    const intervalYAxis2 = ref(store.intervalYAxisTerz);
+    const maxYAxis2 = ref(store.maxYAxisTerz);
 
     const loading1 = ref(false);
     const loading2 = ref(false);
@@ -90,9 +97,28 @@ export default {
       get: () => store.selectedDatetime.toFormat("yyyy-MM-dd'T'HH:mm:ss"),
       set: (val) => {
         console.log("Setter is called", val);
-        store.$patch({
-          selectedDatetime: DateTime.fromFormat(val, "yyyy-MM-dd'T'HH:mm:ss"),
-        });
+        try {
+          const parsedDatetime = DateTime.fromFormat(
+            val,
+            "yyyy-MM-dd'T'HH:mm:ss"
+          );
+          store.$patch({
+            selectedDatetime: parsedDatetime,
+          });
+        } catch {
+          console.log("Parsing failed. Try another parser");
+          try {
+            const parsedDatetime = DateTime.fromFormat(
+              val,
+              "yyyy-MM-dd'T'HH:mm"
+            );
+            store.$patch({
+              selectedDatetime: parsedDatetime,
+            });
+          } catch {
+            console.log("Parsing failed again. Try another parser");
+          }
+        }
       },
     });
 

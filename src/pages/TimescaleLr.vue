@@ -7,6 +7,15 @@
         :model-value="selectedDate"
         @update:model-value="foo"
       />
+      <q-select
+        class="col-3"
+        v-model="selectedImmissionsort"
+        option-label="name"
+        :options="immissionsortOptions"
+        label="Immissionsort"
+      />
+    </div>
+    <div class="row">
       <q-input
         type="number"
         v-model.number="maxYAxisLr"
@@ -17,17 +26,13 @@
         v-model.number="intervalYAxisLr"
         label="Intervall Y-Achse Lr"
       />
-
-      <q-select
-        class="col-3"
-        v-model="selectedImmissionsort"
-        option-label="name"
-        :options="immissionsortOptions"
-        label="Immissionsort"
-      />
     </div>
-    <div class="row q-gutter-md">
-      <q-btn icon="refresh" @click="plotLr" />
+    <div class="row">
+      <q-btn
+        icon="refresh"
+        @click="plotLr"
+        style="margin-top: 5px; margin-bottom: 5px"
+      />
     </div>
     <div id="lrPlot" style="height: 80vh"></div>
   </q-page>
