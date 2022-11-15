@@ -80,8 +80,6 @@ export default {
   // name: 'PageName',
   setup() {
     const $q = useQuasar();
-    const selectedDate = ref(DateTime.now().toFormat(shortFormat));
-    const laermursachen = ref([]);
     const store = useCounterStore();
 
     const intervalYAxis1 = ref(store.intervalYAxisMesspunkt);
@@ -105,8 +103,8 @@ export default {
           store.$patch({
             selectedDatetime: parsedDatetime,
           });
-        } catch {
-          console.log("Parsing failed. Try another parser");
+        } catch (e) {
+          console.log("Parsing failed. Try another parser", e);
           try {
             const parsedDatetime = DateTime.fromFormat(
               val,
@@ -115,8 +113,8 @@ export default {
             store.$patch({
               selectedDatetime: parsedDatetime,
             });
-          } catch {
-            console.log("Parsing failed again. Try another parser");
+          } catch (e) {
+            console.log("Parsing failed again. Try another parser", e);
           }
         }
       },
@@ -149,133 +147,8 @@ export default {
 
     function read() {
       console.log("In read");
-      let myStartTime = DateTime.fromFormat(
-        selectedDatetimeFloor.value,
-        myFormat
-      );
-      const promises = [];
-      const from_date = myStartTime.plus({ hours: 0 }).toFormat(urlFormat);
-      const to_date = myStartTime.plus({ minutes: 15 }).toFormat(urlFormat);
-
-      const messpunkt_id = selectedMesspunkt.value.id;
-      const p1 = api
-        .get(
-          //`/tsdb/evaluation/?time_after=${from_date}&time_before=${to_date}&messpunkt=${messpunkt_id}`
-          `/tsdb/more-mp/?time_after=${from_date}&time_before=${to_date}&messpunkt=${messpunkt_id}&projekt=${store.project.id}`
-        )
-        .then((response) => {
-          console.log(response);
-          console.log(response.data.filter((i) => i["rejected"] != null));
-
-          const values = response.data;
-
-          const layout = {
-            title: `${selectedMesspunkt.value.name}`,
-            yaxis: {
-              title: "LAFeq",
-              // range: [maxYAxis.value - intervalYAxis.value, maxYAxis.value],
-            },
-            xaxis: {
-              title: "Datum",
-              type: "date",
-            },
-          };
-
-          const data = [];
-          const trace1 = {
-            x: values.map((i) => i.time),
-            y: values.map((i) => i.lafeq),
-            name: `Relevanter Pegel`,
-            mode: "lines+markers",
-            marker: {
-              size: 2,
-            },
-          };
-          const trace2 = {
-            x: values.map((i) => i.time),
-            y: values.map((i) => i.rejected),
-            name: `Sekunde nicht verwertbar`,
-            mode: "lines+markers",
-            marker: {
-              size: 2,
-            },
-          };
-
-          const trace3 = {
-            x: values.map((i) => i.time),
-            y: values.map((i) => i.detected),
-            name: `Ereignis`,
-            mode: "lines+markers",
-            marker: {
-              size: 2,
-            },
-          };
-          data.push(trace1);
-          data.push(trace2);
-          data.push(trace3);
-          // df[s].plot("plot_lr").line({ config, layout });
-          Plotly.newPlot("plot-messpunkt", data, layout, plotly_config);
-          updatePlotlyLayout("plot-messpunkt", {
-            "yaxis.range": [
-              maxYAxis1.value - intervalYAxis1.value,
-              maxYAxis1.value,
-            ],
-          });
-        });
-      const p2 = api
-        .get(
-          //`/tsdb/evaluation/?time_after=${from_date}&time_before=${to_date}&messpunkt=${messpunkt_id}`
-          `/tsdb/terz/?time_after=${store.selectedDatetime.toFormat(
-            urlFormat
-          )}&time_before=${store.selectedDatetime.toFormat(
-            urlFormat
-          )}&messpunkt=${messpunkt_id}`
-        )
-        .then((response) => {
-          console.log(response);
-          const layout = {
-            title: `Terzfrequenzen um ${store.selectedDatetime.toFormat(
-              "HH:mm:ss"
-            )}`,
-            yaxis: {
-              title: "LZ",
-              // range: [maxYAxis.value - intervalYAxis.value, maxYAxis.value],
-            },
-          };
-          const corresponding_terz = response.data.find(
-            (i) =>
-              i.time.substring(0, 19) ===
-              store.selectedDatetime.toFormat("yyyy-MM-dd'T'HH:mm:ss")
-          );
-          console.log(corresponding_terz);
-          const frequenciesWithsValues = [];
-          try {
-            for (let f of frequencies_fields) {
-              frequenciesWithsValues.push(corresponding_terz[f]);
-            }
-            const data = [
-              {
-                x: frequencies,
-                y: frequenciesWithsValues,
-                type: "bar",
-              },
-            ];
-            Plotly.newPlot("plot-terz", data, layout, plotly_config);
-            updatePlotlyLayout("plot-terz", {
-              "yaxis.range": [
-                maxYAxis2.value - intervalYAxis2.value,
-                maxYAxis2.value,
-              ],
-            });
-          } catch (ex) {
-            Plotly.newPlot("plot-terz", [], layout, plotly_config);
-          }
-        });
-      return Promise.all([p1, p2]).catch((e) => {
-        console.log(e);
-
-        throw e;
-      });
+      loadPegelZeitverlauf();
+      loadTerzpegel();
     }
 
     onErrorCaptured((err, instance, info) => {
@@ -356,6 +229,7 @@ export default {
               title: "Datum",
               type: "date",
             },
+            legend: { orientation: "h" },
           };
 
           const data = [];
@@ -423,9 +297,9 @@ export default {
         .then((response) => {
           console.log(response);
           const layout = {
-            title: `Terzfrequenzen um ${store.selectedDatetime.toFormat(
-              "HH:mm:ss"
-            )}`,
+            title: `Terzfrequenzen an ${
+              selectedMesspunkt.value.name
+            } um ${store.selectedDatetime.toFormat("HH:mm:ss")}`,
             yaxis: {
               title: "LZ",
               // range: [maxYAxis.value - intervalYAxis.value, maxYAxis.value],
@@ -473,7 +347,6 @@ export default {
       selectedMesspunkt,
       messpunktOptions,
       read,
-      selectedDate,
       selectedDatetime,
       addMinutes,
       intervalYAxis1,

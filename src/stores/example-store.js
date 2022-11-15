@@ -2,10 +2,6 @@ import { defineStore } from "pinia";
 import { DateTime } from "luxon";
 import { shortFormat } from "../pages/db.js";
 import { api } from "../boot/axios";
-import { config_immendingen, config_mannheim } from "../pages/project.js";
-
-config_immendingen["selected_io"] = config_immendingen.ios[0];
-config_mannheim["selected_io"] = config_mannheim.ios[0];
 
 const project_2_show = "mannheim";
 
@@ -14,7 +10,6 @@ export const useCounterStore = defineStore("counter", {
     counter: 0,
     selectedDatetime: DateTime.now().plus({ hours: -24 * 1 }),
     projects: [],
-    selectedProject: config_immendingen,
     selectedImmissionsort: null,
     selectedMesspunkt: null,
     project: null,
@@ -24,6 +19,11 @@ export const useCounterStore = defineStore("counter", {
 
     maxYAxisTerz: 80,
     intervalYAxisTerz: 80,
+
+    maxYAxisLr: 80,
+    intervalYAxisLr: 80,
+
+    showMete: false,
   }),
   getters: {
     doubleCount: (state) => state.counter * 2,
@@ -38,6 +38,7 @@ export const useCounterStore = defineStore("counter", {
       this.counter++;
     },
     async load() {},
+
     async loadProjects() {
       console.log("In loadProjects");
       this.load();
@@ -67,6 +68,7 @@ export const useCounterStore = defineStore("counter", {
           this.project.has_mete = this.project.messpunkt_set.some(
             (mp) => mp.is_meteo_station
           );
+          this.showMete = this.project.has_mete;
           return this.project;
         });
     },

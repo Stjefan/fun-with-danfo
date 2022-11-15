@@ -2,20 +2,24 @@
   <q-page padding>
     <!-- content -->
     <div class="row q-gutter-md">
+      <q-btn label="-24h" @click="addMinutes(-24 * 60)" />
       <q-input
         type="date"
         :model-value="selectedDate"
         @update:model-value="foo"
       />
+      <q-btn label="+24h" @click="addMinutes(+24 * 60)" />
+    </div>
+    <div class="row">
       <q-select
-        class="col-3"
+        class="col-4"
         v-model="selectedImmissionsort"
         option-label="name"
         :options="immissionsortOptions"
         label="Immissionsort"
       />
     </div>
-    <div class="row">
+    <div class="row q-gutter-md">
       <q-input
         type="number"
         v-model.number="maxYAxisLr"
@@ -68,10 +72,32 @@ export default {
     const store = useCounterStore();
 
     // const currentDate = ref(dayjs().format("YYYY-MM-DD"));
-    let selectedDate = computed(() => store.selectedDate.toFormat(shortFormat));
+    const selectedDate = computed({
+      get: () => store.selectedDatetime.toFormat(shortFormat),
+      set: (val) => {
+        console.log("Setter is called", val);
+        store.$patch({
+          selectedDatetime: DateTime.fromFormat(val, shortFormat),
+        });
+      },
+    });
 
-    const intervalYAxisLr = ref(50);
-    const maxYAxisLr = ref(50);
+    const intervalYAxisLr = computed({
+      get: () => store.intervalYAxisLr,
+      set: (val) => {
+        store.$patch({
+          intervalYAxisLr: val,
+        });
+      },
+    });
+    const maxYAxisLr = computed({
+      get: () => store.maxYAxisLr,
+      set: (val) => {
+        store.$patch({
+          maxYAxisLr: val,
+        });
+      },
+    });
 
     const raiseError = () => {
       throw new Error("This is a test error");
@@ -79,6 +105,14 @@ export default {
     watch([maxYAxisLr, intervalYAxisLr], () => {
       updateLayout(selectedDate.value, maxYAxisLr.value, intervalYAxisLr.value);
     });
+
+    function addMinutes(noMinutes) {
+      let myStartTime = DateTime.fromFormat(selectedDate.value, shortFormat);
+
+      selectedDate.value = myStartTime
+        .plus({ minutes: noMinutes })
+        .toFormat(shortFormat);
+    }
     /*
     watch([currentDate, selectedImmissionsort], (newVal, oldVal) => {
       console.log("Wachting currentDate", newVal, oldVal);
@@ -527,6 +561,7 @@ export default {
       store,
       plotLr,
       blub,
+      addMinutes,
     };
   },
 };
