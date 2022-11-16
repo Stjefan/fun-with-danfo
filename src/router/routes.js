@@ -2,7 +2,7 @@ import { useCounterStore } from "../stores/example-store";
 
 const routes = [
   {
-    path: "/:project/",
+    path: "",
     beforeEnter: async (to, from) => {
       // reject the navigation
       console.log("BeforeEnter is called", to, from);
@@ -29,22 +29,22 @@ const routes = [
         name: "ts",
       },
       {
-        path: "mp",
+        path: "/:project/mp",
         component: () => import("pages/TimescaleMesspunkt.vue"),
         name: "mp",
       },
       {
-        path: "io",
+        path: "/:project/io",
         component: () => import("pages/TimescaleLr.vue"),
         name: "io",
       },
       {
-        path: "mete",
+        path: "/:project/mete",
         component: () => import("pages/TimescaleMete.vue"),
         name: "mete",
       },
       {
-        path: "map",
+        path: "/:project/map",
         component: () => import("pages/KartePage.vue"),
         name: "map",
       },

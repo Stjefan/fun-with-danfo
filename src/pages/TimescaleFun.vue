@@ -171,6 +171,10 @@ export default {
     function addMinutes(noMinutes) {
       let myStartTime = DateTime.fromFormat(selectedDate.value, shortFormat);
 
+      console.log(myStartTime);
+      console.log(myStartTime.toString());
+      console.log(myStartTime.offset);
+
       selectedDate.value = myStartTime
         .plus({ minutes: noMinutes })
         .toFormat(shortFormat);

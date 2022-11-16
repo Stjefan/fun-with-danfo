@@ -60,7 +60,7 @@ import { mapState } from "pinia";
 import { useCounterStore } from "../stores/example-store";
 
 const urlFormat = "yyyy-MM-dd'T'HH'%3A'mm'%3A'ss";
-const urlFormatWithTZ = "yyyy-MM-dd'T'HH'%3A'mm'%3A'ss'%2B01'";
+const urlFormatWithTZ = "yyyy-MM-dd'T'HH'%3A'mm'%3A'ss'%2B'Z";
 import { api } from "../boot/axios";
 import { DateTime } from "luxon";
 
@@ -188,10 +188,12 @@ export default {
           const from_date = myStartTime
             .plus({ hours: h[0] })
             .toFormat(urlFormatWithTZ);
+
           const to_date = myStartTime
             .plus({ hours: h[1] })
             .toFormat(urlFormatWithTZ);
           const url = `/tsdb/more-lr/?time_after=${from_date}&time_before=${to_date}&immissionsort=${immissionsort_id}`;
+          console.log("URL: ", url, from_date);
           const p = api.get(url).then((response) => {
             const grenzwert =
               beurteilungszeitraum != 6
