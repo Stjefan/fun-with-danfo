@@ -2,7 +2,8 @@
   <div class="q-pa-md">
     <q-btn
       icon="refresh"
-      style="margin-top: 5px; margin-bottom: 5px"
+      style="margin-top: 10px; margin-bottom: 10px"
+      outline
       @click="readDashboardInfos"
     />
     <div id="otherMap" style="width: 100%; height: 80vh"></div>

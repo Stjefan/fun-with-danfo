@@ -51,6 +51,10 @@ export const useCounterStore = defineStore("counter", {
         .then((response) => {
           console.log(response);
           this.projects = response.data;
+
+          for (let p of this.projects) {
+            p.has_mete = p.messpunkt_set.some((mp) => mp.is_meteo_station);
+          }
         })
         .catch((err) => {
           console.log(err);

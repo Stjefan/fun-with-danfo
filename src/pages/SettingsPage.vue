@@ -1,15 +1,10 @@
 <template>
   <q-page padding>
     <q-select
-      v-model="store.project"
+      v-model="selectedProject"
       :options="store.projects"
       label="Projekt"
       option-label="name"
-    />
-    <q-checkbox
-      :modelValue="store.selectedProject.hasMeteData"
-      label="Wetterstation vorhanden"
-      :disable="true"
     />
     <!-- content -->
   </q-page>
@@ -18,12 +13,26 @@
 <script>
 import { mapState } from "pinia";
 import { useCounterStore } from "../stores/example-store";
+import { computed } from "vue";
 export default {
   // name: 'PageName',
   setup() {
     const store = useCounterStore();
 
+    const selectedProject = computed({
+      get: () => store.project,
+      set: (val) => {
+        console.log("Setter is called", val);
+        store.$patch({
+          project: val,
+          selectedImmissionsort: null,
+          selectedMesspunkt: null,
+        });
+      },
+    });
+
     return {
+      selectedProject,
       store,
     };
   },

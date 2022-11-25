@@ -1,25 +1,33 @@
 <template>
   <q-page padding>
     <!-- content -->
-    <div class="row q-gutter-md">
-      <q-btn label="-24h" @click="addMinutes(-24 * 60)" />
+    <div class="row q-gutter-sm">
+      <q-btn
+        label="-24h"
+        @click="addMinutes(-24 * 60)"
+        style="margin-top: 10px; margin-bottom: 10px"
+        outline
+      />
       <q-input
         type="date"
         :model-value="selectedDate"
         @update:model-value="foo"
       />
-      <q-btn label="+24h" @click="addMinutes(+24 * 60)" />
-    </div>
-    <div class="row">
+      <q-btn
+        label="+24h"
+        @click="addMinutes(+24 * 60)"
+        style="margin-top: 10px; margin-bottom: 10px"
+        outline
+      />
+
       <q-select
-        class="col-4"
+        class="col-3"
         v-model="selectedImmissionsort"
         option-label="name"
         :options="immissionsortOptions"
         label="Immissionsort"
       />
-    </div>
-    <div class="row q-gutter-md">
+
       <q-input
         type="number"
         v-model.number="maxYAxisLr"
@@ -30,14 +38,14 @@
         v-model.number="intervalYAxisLr"
         label="Intervall Y-Achse Lr"
       />
-    </div>
-    <div class="row">
       <q-btn
         icon="refresh"
         @click="plotLr"
-        style="margin-top: 5px; margin-bottom: 5px"
+        style="margin-top: 10px; margin-bottom: 10px"
+        outline
       />
     </div>
+
     <div id="lrPlot" style="height: 80vh"></div>
   </q-page>
 </template>
@@ -220,55 +228,30 @@ export default {
           beurteilungszeitraum++;
         }
 
-        return (
-          Promise.all(promises)
-            .then((lrCalls) => {
-              console.log(lrCalls);
-              const totalResult = {};
-              updateChartData(lrCalls);
+        return Promise.all(promises)
+          .then((lrCalls) => {
+            console.log(lrCalls);
+            const totalResult = {};
+            updateChartData(lrCalls);
 
-              updateLayout(
-                selectedDate.value,
-                maxYAxisLr.value,
-                intervalYAxisLr.value
-              );
+            updateLayout(
+              selectedDate.value,
+              maxYAxisLr.value,
+              intervalYAxisLr.value
+            );
+          })
 
-              if (false) {
-                for (let beurteilungszeitraum of idsBeurteilungszeitraum) {
-                  let result = {};
-                  const grenzwert =
-                    beurteilungszeitraum != 6
-                      ? selectedImmissionsort.value.grenzwert_nacht
-                      : selectedImmissionsort.value.grenzwert_tag;
-                  if (lrCalls[beurteilungszeitraum].ts.length > 0) {
-                    lrCalls[beurteilungszeitraum].unshift({
-                      // console.log(response);
-                      name: "Grenzwert",
-                      x: lrCalls[beurteilungszeitraum][0].x,
-                      y: lrCalls[beurteilungszeitraum][0].x.map(
-                        (i) => grenzwert
-                      ),
-                    });
-                  }
-                }
-
-                // console.log(result);
-              }
-            })
-
-            //console.log("Promise ended", totalResult);
-            .catch((e) => {
-              console.log("error catch with then / catch:", e);
-              $q.notify({
-                message: `Fehler beim Laden der Daten: ${e}`,
-                type: "negative",
-              });
-            })
-            .finally(() => {
-              console.log("Run finally block...");
-              $q.loading.hide();
-            })
-        );
+          .catch((e) => {
+            console.log("error catch with then / catch:", e);
+            $q.notify({
+              message: `Fehler beim Laden der Daten: ${e}`,
+              type: "negative",
+            });
+          })
+          .finally(() => {
+            console.log("Run finally block...");
+            $q.loading.hide();
+          });
       }
     }
 

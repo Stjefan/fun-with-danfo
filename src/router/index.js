@@ -8,6 +8,7 @@ import {
 import routes from "./routes";
 
 import { useCounterStore } from "../stores/example-store";
+import { Notify } from "quasar";
 
 /*
  * If not building with SSR mode, you can
@@ -37,12 +38,30 @@ export default route(function (/* { store, ssrContext } */) {
     ),
   });
 
-  Router.beforeEach((to, from, next) => {
+  Router.beforeEach((to, from) => {
     // we wanted to use the store here
     //if (store.project) next()
+    console.log("???");
+    const store = useCounterStore();
 
-    console.log(to, from, next);
-    next();
+    if (to.meta.requiresProject) {
+      // this route requires auth, check if logged in
+      // if not, redirect to login page.
+      if (store.project == null) {
+        console.log(to.meta);
+        Notify.create({
+          message: "Erst ein Projekt auswählen",
+        });
+
+        return {
+          path: "",
+          // save the location we were at to come back later
+          // query: { redirect: to.fullPath },
+        };
+      }
+    }
+
+    // next();
   });
 
   return Router;

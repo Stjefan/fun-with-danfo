@@ -2,15 +2,24 @@
   <q-page padding>
     <!-- content -->
     <div class="row q-gutter-md">
-      <q-btn label="-24h" @click="addMinutes(-24 * 60)" />
+      <q-btn
+        label="-24h"
+        @click="addMinutes(-24 * 60)"
+        style="margin-top: 10px; margin-bottom: 10px"
+        outline
+      />
       <q-input type="date" v-model="selectedDate" />
-      <q-btn label="+24h" @click="addMinutes(24 * 60)" />
-    </div>
-    <div>
+      <q-btn
+        label="+24h"
+        @click="addMinutes(24 * 60)"
+        style="margin-top: 10px; margin-bottom: 10px"
+        outline
+      />
       <q-btn
         icon="refresh"
         @click="plotMete"
-        style="margin-top: 5px; margin-bottom: 5px"
+        style="margin-top: 10px; margin-bottom: 10px"
+        outline
       />
     </div>
     <div id="mete-charts" style="height: 75vh" />

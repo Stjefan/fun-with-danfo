@@ -2,15 +2,54 @@
   <q-page padding>
     <!-- content -->
     <div class="row q-gutter-sm">
-      <q-btn label="-12h" @click="addMinutes(-12 * 60)" />
-      <q-btn label="-1h" @click="addMinutes(-60)" />
-      <q-btn label="-15min" @click="addMinutes(-15)" />
+      <q-btn
+        label="-12h"
+        @click="addMinutes(-12 * 60)"
+        style="margin-top: 10px; margin-bottom: 10px"
+        outline
+      />
+      <q-btn
+        label="-1h"
+        @click="addMinutes(-60)"
+        style="margin-top: 10px; margin-bottom: 10px"
+        outline
+      />
+      <q-btn
+        label="-15min"
+        @click="addMinutes(-15)"
+        style="margin-top: 10px; margin-bottom: 10px"
+        outline
+      />
       <q-input type="datetime-local" v-model="selectedDatetime" step="1" />
-      <q-btn label="+15min" @click="addMinutes(15)" />
-      <q-btn label="+1h" @click="addMinutes(60)" />
-      <q-btn label="+12h" @click="addMinutes(12 * 60)" />
+      <q-btn
+        label="+15min"
+        @click="addMinutes(15)"
+        style="margin-top: 10px; margin-bottom: 10px"
+        outline
+      />
+      <q-btn
+        label="+1h"
+        @click="addMinutes(60)"
+        style="margin-top: 10px; margin-bottom: 10px"
+        outline
+      />
+      <q-btn
+        label="+12h"
+        @click="addMinutes(12 * 60)"
+        style="margin-top: 10px; margin-bottom: 10px"
+        outline
+      />
+      <div class="col-1" />
+
+      <q-select
+        class="col-3"
+        v-model="selectedMesspunkt"
+        option-label="name"
+        :options="messpunktOptions"
+        label="Messpunkt"
+      />
     </div>
-    <div class="row q-gutter-sm">
+    <div class="row q-gutter-sm justify-start">
       <q-input type="number" v-model.number="maxYAxis1" label="Max. Y-Achse" />
       <q-input
         type="number"
@@ -29,19 +68,11 @@
       />
     </div>
 
-    <div class="row q-gutter-sm">
-      <q-select
-        class="col-3"
-        v-model="selectedMesspunkt"
-        option-label="name"
-        :options="messpunktOptions"
-        label="Messpunkt"
-      />
-    </div>
     <div class="row">
       <q-btn
         icon="refresh"
-        style="margin-top: 5px; margin-bottom: 5px"
+        style="margin-top: 10px; margin-bottom: 10px"
+        outline
         @click="read"
       />
     </div>
@@ -56,7 +87,7 @@ const urlFormat = "yyyy-MM-dd'T'HH'%3A'mm'%3A'ss";
 
 import Plotly from "plotly.js-dist-min";
 import { api } from "../boot/axios";
-import { DateTime } from "luxon";
+import { DateTime, Settings } from "luxon";
 import { ref, computed, watch, onErrorCaptured, onMounted } from "vue";
 import {
   readIO,
@@ -91,6 +122,8 @@ export default {
     const loading1 = ref(false);
     const loading2 = ref(false);
 
+    Settings.throwOnInvalid = true;
+
     const selectedDatetime = computed({
       get: () => store.selectedDatetime.toFormat("yyyy-MM-dd'T'HH:mm:ss"),
       set: (val) => {
@@ -100,6 +133,7 @@ export default {
             val,
             "yyyy-MM-dd'T'HH:mm:ss"
           );
+          console.log("Should not be visibile, if casting fails");
           store.$patch({
             selectedDatetime: parsedDatetime,
           });
@@ -157,6 +191,9 @@ export default {
         message: `Fehler beim Laden der Daten: ${err}`,
         type: "negative",
       });
+      loading1.value = false;
+      loading2.value = false;
+      $q.loading.hide();
     });
 
     const messpunktOptions = computed(() => {
