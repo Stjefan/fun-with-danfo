@@ -113,11 +113,38 @@ export default {
     const $q = useQuasar();
     const store = useCounterStore();
 
-    const intervalYAxis1 = ref(store.intervalYAxisMesspunkt);
-    const maxYAxis1 = ref(store.maxYAxisMesspunkt);
-
-    const intervalYAxis2 = ref(store.intervalYAxisTerz);
-    const maxYAxis2 = ref(store.maxYAxisTerz);
+    const intervalYAxis1 = computed({
+      get: () => store.intervalYAxisMesspunkt,
+      set: (val) => {
+        store.$patch({
+          intervalYAxisMesspunkt: val,
+        });
+      },
+    });
+    const maxYAxis1 = computed({
+      get: () => store.maxYAxisMesspunkt,
+      set: (val) => {
+        store.$patch({
+          maxYAxisMesspunkt: val,
+        });
+      },
+    });
+    const intervalYAxis2 = computed({
+      get: () => store.intervalYAxisTerz,
+      set: (val) => {
+        store.$patch({
+          intervalYAxisTerz: val,
+        });
+      },
+    });
+    const maxYAxis2 = computed({
+      get: () => store.maxYAxisTerz,
+      set: (val) => {
+        store.$patch({
+          maxYAxisTerz: val,
+        });
+      },
+    });
 
     const loading1 = ref(false);
     const loading2 = ref(false);

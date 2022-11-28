@@ -23,11 +23,14 @@ export default {
       get: () => store.project,
       set: (val) => {
         console.log("Setter is called", val);
+        store.setProject(val);
+        /*
         store.$patch({
           project: val,
           selectedImmissionsort: null,
           selectedMesspunkt: null,
         });
+        */
       },
     });
 
